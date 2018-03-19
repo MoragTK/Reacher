@@ -6,7 +6,7 @@ import keras
 from Database10 import Database10
 from function import ABfinder10, setQ, LqrFhD
 import time
-
+#hello
 
 # for LQR controller
 R=np.identity(2)*0.01
