@@ -2,39 +2,40 @@ from collections import deque
 import numpy as np
 
 
+# this class hold the sample of <xn,un,xn+1>  n=k:k+N
 class DataBase():
 
+
     # Constructor
-    def __init__(self, N = 10):
-        self.size = N
-        self.Q = deque(maxlen=N) #xn = 6, un = 2, xn1 = 6
+    def __init__(self, N=10):
+        self.size=N
+        self.Q = deque(maxlen=N)
         return
 
-    # receives Xk, Uk, and Xk+1, and adds them as another data sample to the data base.
+    # append receives Xk, Uk, Xk+1 and inserts the sample into the data set. (<xn,un,xn+1>)
     def append(self, xu=None, xn1=None):
-        self.Q.append(np.hstack((xu, xn1))) #TODO: Doesnt need to be [xu, xn1]?
+        self.Q.append(np.hstack((xu, xn1)))
         return
 
-    # returns the newest sample at the data base
-    def getLast(self): #TODO: I dont think it needs "self" inside... does it?
+    # getLast returns the most recent data sample (no delete)
+    def getLast(self):
         xn = self.Q.pop()
         self.Q.append(xn)
-        tmpX=xn[0,8:]   # xn1 #TODO: Xk+1?
-        tmpU=xn[0,6:8]  # un. We assume the next u will be close to the previous #TODO: Where is the original Xk?
-        r=np.hstack((tmpX,tmpU))
+        tmpX = xn[0, 10:]   # Xk+1
+        tmpU = xn[0, 8:10]  # Uk  we assume the next u will be close to the previous
+        r=np.hstack((tmpX, tmpU))
         return r
 
-    # returns all of the data in the data base.  ???
-    def getAll(self):   # this is for training #TODO: Do we need to send self?
-        input = np.zeros((self.size, 8))
-        target = np.zeros((self.size, 6))
+    # getAll - returns all data base for training purposes.
+    def getAll(self):
+        input = np.zeros((self.size, 10))
+        target = np.zeros((self.size, 8))
         for i in range(0, self.size):
             tmpOut = self.Q.pop()
-            input[i, :] = tmpOut[0, :8]
-            target[i, :] = tmpOut[0, 8:]
+            input[i, :] = tmpOut[0, :10]
+            target[i, :] = tmpOut[0, 10:]
         for i in range(0, self.size):
-            tmpIn = np.hstack((input[i,:],target[i,:]))
+            tmpIn = np.hstack((input[i, :], target[i, :]))
             tmpIn = np.matrix(tmpIn)
             self.Q.appendleft(tmpIn)
-        return [input,target]
-        #TODO: Question... Is this the cycle thing?
+        return [input, target]
