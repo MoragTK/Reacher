@@ -21,19 +21,19 @@ class DataBase():
     def getLast(self):
         xn = self.Q.pop()
         self.Q.append(xn)
-        tmpX = xn[0, 10:]   # Xk+1
-        tmpU = xn[0, 8:10]  # Uk  we assume the next u will be close to the previous
-        r=np.hstack((tmpX, tmpU))
+        tmpX = xn[0, 8:]   # Xk+1
+        tmpU = xn[0, 6:8]  # Uk  we assume the next u will be close to the previous
+        r = np.hstack((tmpX, tmpU))
         return r
 
     # getAll - returns all data base for training purposes.
     def getAll(self):
-        input = np.zeros((self.size, 10))
-        target = np.zeros((self.size, 8))
+        input = np.zeros((self.size, 8))
+        target = np.zeros((self.size, 6))
         for i in range(0, self.size):
             tmpOut = self.Q.pop()
-            input[i, :] = tmpOut[0, :10]
-            target[i, :] = tmpOut[0, 10:]
+            input[i, :] = tmpOut[0, :8]
+            target[i, :] = tmpOut[0, 8:]
         for i in range(0, self.size):
             tmpIn = np.hstack((input[i, :], target[i, :]))
             tmpIn = np.matrix(tmpIn)

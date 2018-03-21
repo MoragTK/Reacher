@@ -1,37 +1,38 @@
 import numpy as np
 from numpy.linalg import inv
+from sklearn.metrics import mean_squared_error
+from collections import deque
+
 
 #CalculateAB
 # Receives the model, the input vector and delta
 # Returns the state space matrices A and B.
 def CalculateAB( xu, model, delta=0.00001):
-    A = np.ones((8, 8))
-    B = np.ones((8, 2))
+    A = np.ones((6, 6))
+    B = np.ones((6, 2))
     net = model
-    for i in range(0, 10):
+    for i in range(0, 8):
         x = xu
         x[0, i] = xu[0, i] + delta
         d2 = net.predict(x)
         x = xu
         x[0, i] = xu[0, i] - delta
         d1 = net.predict(x)
-        if i < 8:
+        if i < 6:
             A[:, i] = (d2 - d1) / (2*delta)
         else:
-            B[:, i - 8] = (d2 - d1) / (2*delta)
+            B[:, i - 6] = (d2 - d1) / (2*delta)
     return [A, B]
 
 # set Q function
 def setQ(Q):
-    Q[0,0]=0.1
-    Q[1,1]=0.1
-    Q[2,2]=1
-    Q[3,3]=1
-    Q[4,4]=1
-    Q[5,5]=1
-    Q[6,6]=1
-    Q[6,6]=1
-    return Q
+        Q[0,0]=0 # theta 1
+        Q[1,1]=0 # theta 2
+        Q[2,2]=1 # v1
+        Q[3,3]=1 # v2
+        Q[4,4]=10 # dx (finger-ball)
+        Q[5,5]=10 # dy
+        return Q
 
 def LqrFhD(A,B,Q,R,N=10):
     PN=Q
@@ -60,3 +61,32 @@ def LqrFhD(A,B,Q,R,N=10):
     c5=np.matmul(c4,A)  # Bt*Pk*A
     F=np.matmul(c3,c5) # inv(Bt*Pk*B+R)*(Bt*Pk*A)
     return F
+
+def getError(A, B, model, uk, xnu, xreal):
+    x = xnu[0, 0:6]
+    x = np.hstack((x, uk))
+    netOut = model.predict(x)
+    x = np.transpose(x[0, 0:6])
+    ABOout = np.matmul(A, x)
+    ABOout = ABOout + np.matmul(B, np.transpose(uk))
+    ABOout = np.transpose(ABOout)
+    #print "net-real: " + str(mean_squared_error(netOut, xreal))
+    print "AB-real: " + str(mean_squared_error(ABOout, xreal))
+   # print "AB-net: " + str(mean_squared_error(ABOout, netOut))
+    return
+def getAll(Q,size):
+    out = Q.pop()
+    Q.appendleft(out)
+    input = out[:, :8]
+    target = out[:, 8:]
+    for i in range(0,size-1):
+        out = Q.pop()
+        Q.appendleft(out)
+        inp = out[:, :8]
+        tar = out[:, 8:]
+        input = np.vstack((input, inp))
+        target = np.vstack((target, tar))
+    return [input,target]
+
+
+
