@@ -58,7 +58,7 @@ class DataClass:
     # actUk performs action Uk on the system and returns the new state, Xk+1
     def actUk(self, uk):
         action = uk
-        self.env.render()
+        #self.env.render()
         self.observation, self.reward, done, info = self.env.step(action)
         self.x_n[0] = self.observation[0] % (math.pi * 2)  # cos(theta1)
         self.x_n[1] = self.observation[1] % (math.pi * 2)  # cos(theta2)
@@ -71,7 +71,7 @@ class DataClass:
     # in case of an exception we start another env and return the first state and some random action
     # plus the new state we get from the action
     def reset(self):
-        self.env.render()
+        #self.env.render()
         self.observation = self.env.reset()  # new xn
         self.x_n[0] = self.observation[0] % (math.pi * 2)  # cos(theta1)
         self.x_n[1] = self.observation[1] % (math.pi * 2)  # cos(theta2)

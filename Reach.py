@@ -11,7 +11,7 @@ import getpass
 R = np.identity(2) * 0.01
 Q = np.identity(6)
 Q = setQ(Q)
-size = 100  # size of samples data base
+size = 200  # size of samples data base
 
 username = getpass.getuser()
 filepath = '/home/' + username + '/PycharmProjects/Reacher/net/6xy21.3-9_37'
@@ -31,8 +31,8 @@ model = keras.models.load_model(filepath)
 timeout = time.time()  # limit time of the script
 t = timeout
 while True:
-    #input, target = data.getAll()   # we get the all data for training
-    #model.fit(input, target, batch_size=10, epochs=150, verbose=0)
+    input, target = data.getAll()   # we get the all data for training
+    model.fit(input, target, batch_size=10, epochs=200, verbose=0)
 
     # this is [xn,un-1]
     xnu = data.getLast()
@@ -48,7 +48,7 @@ while True:
 
     # we act u, check the reaction ,and update Database
     x = np.transpose(x[0, :6])
-    uk = -np.matmul(K,x) * 0.001  # to reduce volume of action because of linearization
+    uk = -np.matmul(K,x) * 0.01  # to reduce volume of action because of linearization
     uk = np.transpose(uk)
     xn1 = np.matrix(sample.actUk(uk))
     getError(A, B, model, uk, xnu, xn1)
@@ -60,7 +60,7 @@ while True:
         data.append(newState[0], newState[1])
         t = time.time()
 
-    if time.time() > timeout + 60 * 30:
+    if time.time() > timeout + 60 * 60*2:
         d = time.gmtime()
         time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + ":" + str(d[4])
         model.save('/home/' + username + '/PycharmProjects/Reacher/net/'+'cont'+time_stamp)
