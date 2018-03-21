@@ -3,7 +3,9 @@ import pickle
 import numpy as np
 import gym
 import math
+import getpass
 
+username = getpass.getuser()
 
 class DataClass:
 
@@ -44,11 +46,11 @@ class DataClass:
             self.x_n[5] = self.observation[9]  # delta y
 
 
-        file_in = open('/home/project/PycharmProjects/Reacher/var/in6_x_y', 'w')
+        file_in = open('/home/' + username + '/PycharmProjects/Reacher/var/in6_x_y', 'w')
         pickle.dump(self.in_n, file_in)
 
     def getData(self):
-        file_out = open('/home/project/PycharmProjects/Reacher/var/in6_x_y', 'r')
+        file_out = open('/home/' + username + '/PycharmProjects/Reacher/var/in6_x_y', 'r')
         in_n = np.matrix(pickle.load(file_out))
         len = in_n.__len__()
         x_n_1 = np.matrix(in_n[1:, :6])
