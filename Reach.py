@@ -4,7 +4,8 @@ from Auxilary import CalculateAB, setQ, LqrFhD, getError
 import numpy as np
 import keras
 import time
-import os
+import getpass
+
 
 # for LQR controller
 R = np.identity(2) * 0.01
@@ -12,7 +13,8 @@ Q = np.identity(6)
 Q = setQ(Q)
 size = 100  # size of samples data base
 
-filepath = '/home/project/PycharmProjects/Reacher/net/6xy21.3-9_37'
+username = getpass.getuser()
+filepath = '/home/' + username + '/PycharmProjects/Reacher/net/6xy21.3-9_37'
 
 # create Database and random data.
 data = DataBase(size)
@@ -61,5 +63,5 @@ while True:
     if time.time() > timeout + 60 * 30:
         d = time.gmtime()
         time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + ":" + str(d[4])
-        model.save('/home/project/PycharmProjects/Reacher/net/'+'cont'+time_stamp)
+        model.save('/home/' + username + '/PycharmProjects/Reacher/net/'+'cont'+time_stamp)
         timeout = time.time()
