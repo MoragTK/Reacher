@@ -40,11 +40,11 @@ while True:
     if time.time() > t + 60 * 60:
         d = time.gmtime()
         time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + ":" + str(d[4])
-        model.save('/home/project/PycharmProjects/Reacher/net/' + '6xy' + time_stamp)
+        model.save('/home/' + username + '/PycharmProjects/Reacher/net/' + '6xy' + time_stamp)
         t=time.time()
         continue
 
     if time.time() > timeout+60*5:
         d = time.gmtime()
         time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + ":" + str(d[4])
-        model.save('/home/project/PycharmProjects/Reacher/net/' + '6xy' + time_stamp)
+        model.save('/home/' + username + '/PycharmProjects/Reacher/net/' + '6xy' + time_stamp)

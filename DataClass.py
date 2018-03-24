@@ -3,7 +3,9 @@ import pickle
 import numpy as np
 import gym
 import math
+import getpass
 
+username = getpass.getuser()
 
 class DataClass:
 
@@ -44,12 +46,12 @@ class DataClass:
             self.x_n[5] = np.copy(self.observation[9])  # delta y
 
 
-        file_in = open('/home/london/PycharmProjects/Reacher/var/in6_x_y', 'w')
+        file_in = open('/home/' + username + '/PycharmProjects/Reacher/var/in6_x_y', 'w')
         pickle.dump(self.in_n, file_in)
 
     def getData(self):
-        file_out = open('/home/london/PycharmProjects/Reacher/var/in6_x_y', 'r')
-        in_n = np.copy(np.matrix(pickle.load(file_out)))
+        file_out = open('/home/' + username + '/PycharmProjects/Reacher/var/in6_x_y', 'r')
+        in_n = np.matrix(pickle.load(file_out))
         len = in_n.__len__()
         x_n_1 = np.matrix(in_n[1:, :6])
         in_n = np.delete(in_n, (len - 1), axis=0)
@@ -71,7 +73,7 @@ class DataClass:
     # in case of an exception we start another env and return the first state and some random action
     # plus the new state we get from the action
     def reset(self):
-        self.env.render()
+        #self.env.render()
         self.observation = self.env.reset()  # new xn
         self.x_n[0] = np.copy(self.observation[0] % (math.pi * 2))  # cos(theta1)
         self.x_n[1] = np.copy(self.observation[1] % (math.pi * 2))  # cos(theta2)
