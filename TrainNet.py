@@ -1,11 +1,14 @@
 import time
 import keras
+import getpass
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
 from DataClass import DataClass
 from Auxilary import getAll
 from collections import deque
+
+username = getpass.getuser()
 
 size = 30
 sample = 100

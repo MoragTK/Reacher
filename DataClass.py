@@ -14,12 +14,13 @@ class DataClass:
     observation = np.array(env.reset())
     x_n = np.array([0., 0., 0., 0., 0., 0.])
     action = np.array([0., 0.])  # Uk
-    ball=np.array([0.,0.])
-    ball[0]=observation[2]
-    ball[1]=observation[3]
+    ball = np.array([0.,0.])
+    ball[0] = observation[2]
+    ball[1] = observation[3]
+
     # makeData creates and saves a new sample <xn,un,xn+1> of a random action Uk
     def makeData(self, sample):
-	self.in_n =np.matrix([0.,0.,0.,0.,0.,0.,0.,0.])
+        self.in_n =np.matrix([0., 0., 0., 0., 0., 0., 0., 0.])
         for i in range(sample):
             #self.env.render()
             # create random action
