@@ -8,11 +8,10 @@ import os
 from sklearn.metrics import mean_squared_error
 
 # for LQR controller
-R = np.identity(2)
-R=R*0.01
+R = np.identity(2)*0.01
 Q = np.identity(6)
 Q = setQ(Q)
-size = 150  # size of samples data base
+size = 2  # size of samples data base
 
 filepath = '/home/london/PycharmProjects/Reacher/net/cont22.3-10_31'
 
@@ -40,7 +39,7 @@ while True:
     un = np.copy(sample.action)
     xnu = np.hstack((xn, np.matrix(un)))
     ball=DataClass.ball
-
+    '''
     x=np.copy(xnu)
     x[0,4]=abs(x[0,4]-ball[0])
     x[0,5] = abs(x[0,5] - ball[1])
@@ -48,18 +47,18 @@ while True:
     K = LqrFhD2(A, B, Q, R,30)
     x = np.copy(np.transpose(x[0, :6]))
     uk = np.copy(-np.matmul(K,np.transpose(xnu[0,:6])))   # to reduce volume of action because of linearization
-    uk = np.transpose(uk)*0.1
+    uk = np.transpose(uk)*0.01
     #Mse1 = np.matmul((np.matmul(np.transpose(x), Q)), x)
     #Mse2 = np.matmul((np.matmul(uk, R)), np.transpose(uk))
     #print "MSE: " +str(Mse1+Mse2)
-
-    #uk=np.copy(scanUopt(model,xnu,ball))
+    '''
+    uk=np.copy(scanUopt(model,xnu,ball))
     xn1 = np.copy(np.matrix(sample.actUk(uk)))
     #getError(A, B, model, np.copy(uk), np.copy(xnu), np.copy(xn1))
     xn = np.hstack((xnu[0, :6], uk))
     data.append(xn, xn1)
 
-    if time.time() > t + 60*4:
+    if time.time() > t + 60*1.5:
         newState = sample.reset()
         data.append(np.copy(newState[0]), np.copy(newState[1]))
         t = time.time()

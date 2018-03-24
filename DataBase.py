@@ -31,11 +31,11 @@ class DataBase():
         input = np.zeros((self.size, 8))
         target = np.zeros((self.size, 6))
         for i in range(0, self.size):
-            tmpOut = np.matrix(np.copy(self.Q.pop()))
+            tmpOut = self.Q.pop()
             input[i, :] = np.copy(tmpOut[0, :8])
             target[i, :] = np.copy(tmpOut[0, 8:])
         for i in range(0, self.size):
             tmpIn = np.hstack((input[i, :], target[i, :]))
-            tmpIn = np.copy(np.matrix(tmpIn))
+            tmpIn = np.matrix(tmpIn)
             self.Q.appendleft(np.copy(tmpIn))
-        return [input, target]
+        return [np.copy(input), np.copy(target)]

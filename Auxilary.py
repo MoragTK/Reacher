@@ -115,26 +115,21 @@ def getAll(Q,size):
 
 
 def scanUopt(model,xu,ball):
-    x=np.copy(xu[0,:6])
-    xd =np.copy(xu[0,:6])
-    u1=-1.1
+    u1=-0.002
     MSE=1000
     ud=np.matrix([[0.,0.]])
-    xd[0,4]=ball[0]        #dx
-    xd[0,5]=ball[1]  #dy
-    for i in range(0,20):
-        u2=-1.1
-        u1=u1+0.1
-        for j in range(0,20):
-            u2=u2+0.1
-            u=np.matrix([[u1,u2]])
-            xnu=np.hstack((x,u))
-            xn1=model.predict(xnu)
-            mse=mean_squared_error(xn1,xd)
-            #print(mse,j,i)
+    for i in range(0,3):
+        u2=-0.002
+        u1=u1+0.001
+        for j in range(0,3):
+            u2=u2+0.001
+            u=np.copy(np.matrix([[u1,u2]]))
+            xnu=np.hstack((xu,u))
+            xn1=np.matrix(model.predict(xnu))
+            xy=xn1[0,4:]
+            mse=mean_squared_error(xy,ball)
             if mse<MSE:
                 MSE=mse
                 ud=u
     return ud
-
 
