@@ -1,22 +1,27 @@
 import numpy as np
 from numpy.linalg import inv
 from sklearn.metrics import mean_squared_error
-from collections import deque
+import cvxpy
+import matplotlib.pyplot as plt
+
+import cvxopt
+from cvxopt import matrix
+import scipy.linalg
 
 
 #CalculateAB
 # Receives the model, the input vector and delta
 # Returns the state space matrices A and B.
-def CalculateAB( xu, model, delta=0.00001):
+def CalculateAB( xu, model, delta=0.01):
     A = np.ones((6, 6))
     B = np.ones((6, 2))
     net = model
     for i in range(0, 8):
-        x = xu
-        x[0, i] = xu[0, i] + delta
+        x = np.copy(xu)
+        x[0, i] = np.copy(xu[0, i] + delta)
         d2 = net.predict(x)
-        x = xu
-        x[0, i] = xu[0, i] - delta
+        x = np.copy(xu)
+        x[0, i] = np.copy(xu[0, i] - delta)
         d1 = net.predict(x)
         if i < 6:
             A[:, i] = (d2 - d1) / (2*delta)
@@ -30,8 +35,8 @@ def setQ(Q):
         Q[1,1]=0 # theta 2
         Q[2,2]=1 # v1
         Q[3,3]=1 # v2
-        Q[4,4]=10 # dx (finger-ball)
-        Q[5,5]=10 # dy
+        Q[4,4]=1 # dx (finger-ball)
+        Q[5,5]=1 # dy
         return Q
 
 def LqrFhD(A,B,Q,R,N=10):
@@ -62,31 +67,69 @@ def LqrFhD(A,B,Q,R,N=10):
     F=np.matmul(c3,c5) # inv(Bt*Pk*B+R)*(Bt*Pk*A)
     return F
 
+
+def LqrFhD2(A,B,Q,R,N=10):
+    PN=Q
+    Bt=np.transpose(B)
+    for i in range(0,N-1):
+        PN=scipy.linalg.solve_discrete_are(A,B,PN,R)
+
+    c1 = np.matmul(Bt, PN)
+    c2 = np.matmul(c1, B) + R  # Bt*Pk*B+R
+    c3=inv(c2)
+    c4 = np.matmul(Bt, PN)
+    c5 = np.matmul(c4, A)  # Bt*Pk*A
+    F = np.matmul(c3, c5)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
+    return F
+
+
+
+
+
+
 def getError(A, B, model, uk, xnu, xreal):
-    x = xnu[0, 0:6]
+    x = xnu[0,0:6]
     x = np.hstack((x, uk))
     netOut = model.predict(x)
     x = np.transpose(x[0, 0:6])
     ABOout = np.matmul(A, x)
     ABOout = ABOout + np.matmul(B, np.transpose(uk))
     ABOout = np.transpose(ABOout)
-    #print "net-real: " + str(mean_squared_error(netOut, xreal))
+    print "net-real: " + str(mean_squared_error(netOut, xreal))
     print "AB-real: " + str(mean_squared_error(ABOout, xreal))
    # print "AB-net: " + str(mean_squared_error(ABOout, netOut))
     return
 def getAll(Q,size):
-    out = Q.pop()
-    Q.appendleft(out)
-    input = out[:, :8]
-    target = out[:, 8:]
+    out = np.copy(Q.pop())
+    Q.appendleft(np.copy(out))
+    input = np.copy(out[:, :8])
+    target = np.copy(out[:, 8:])
     for i in range(0,size-1):
-        out = Q.pop()
-        Q.appendleft(out)
-        inp = out[:, :8]
-        tar = out[:, 8:]
+        out = np.copy(Q.pop())
+        Q.appendleft(np.copy(out))
+        inp = np.copy(out[:, :8])
+        tar = np.copy(out[:, 8:])
         input = np.vstack((input, inp))
         target = np.vstack((target, tar))
     return [input,target]
 
 
+def scanUopt(model,xu,ball):
+    u1=-0.002
+    MSE=1000
+    ud=np.matrix([[0.,0.]])
+    for i in range(0,3):
+        u2=-0.002
+        u1=u1+0.001
+        for j in range(0,3):
+            u2=u2+0.001
+            u=np.copy(np.matrix([[u1,u2]]))
+            xnu=np.hstack((xu,u))
+            xn1=np.matrix(model.predict(xnu))
+            xy=xn1[0,4:]
+            mse=mean_squared_error(xy,ball)
+            if mse<MSE:
+                MSE=mse
+                ud=u
+    return ud
 
