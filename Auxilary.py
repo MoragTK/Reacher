@@ -1,42 +1,67 @@
 import numpy as np
 from numpy.linalg import inv
 from sklearn.metrics import mean_squared_error
-import cvxpy
-import matplotlib.pyplot as plt
-
-import cvxopt
-from cvxopt import matrix
 import scipy.linalg
 
 
 #CalculateAB
 # Receives the model, the input vector and delta
 # Returns the state space matrices A and B.
-def CalculateAB( xu, model, delta=0.01):
-    A = np.ones((6, 6))
-    B = np.ones((6, 2))
-    net = model
-    for i in range(0, 8):
-        x = np.copy(xu)
-        x[0, i] = np.copy(xu[0, i] + delta)
-        d2 = net.predict(x)
-        x = np.copy(xu)
-        x[0, i] = np.copy(xu[0, i] - delta)
-        d1 = net.predict(x)
-        if i < 6:
+#TODO: This function needs to be verified
+def deriveAB(xk, uk, model, delta=0.01):
+    xk_uk = np.hstack((xk, uk))
+    xk_uk = np.reshape(xk_uk, [1, 10])
+
+    xkDim = 8
+    ukDim = 2
+    A = np.ones((xkDim, xkDim))
+    B = np.ones((xkDim, ukDim))
+    '''
+    for i in range(0, xkDim + ukDim):
+        x = np.copy(xk_uk)
+        x[i] = np.copy(xk_uk[i] + delta)
+        d2 = model.predict(x)
+        x = np.copy(xk_uk)
+        x[i] = np.copy(xk_uk[i] - delta)
+        d1 = model.predict(x)
+        if i < xkDim:
+            print "d1"
+            print d1
+            print "d2"
+            print d2
+
             A[:, i] = (d2 - d1) / (2*delta)
         else:
-            B[:, i - 6] = (d2 - d1) / (2*delta)
+            B[:, i - xkDim] = (d2 - d1) / (2*delta)'''
     return [A, B]
 
+
+def getError(A, B, model, uk, xnu, xreal):
+    x = xnu[0,0:6]
+    x = np.hstack((x, uk))
+    netOut = model.predict(x)
+    x = np.transpose(x[0, 0:6])
+    ABOout = np.matmul(A, x)
+    ABOout = ABOout + np.matmul(B, np.transpose(uk))
+    ABOout = np.transpose(ABOout)
+    print "net-real: " + str(mean_squared_error(netOut, xreal))
+    print "AB-real: " + str(mean_squared_error(ABOout, xreal))
+   # print "AB-net: " + str(mean_squared_error(ABOout, netOut))
+    return
+
+
+'''
 # set Q function
 def setQ(Q):
-        Q[0,0]=0 # theta 1
-        Q[1,1]=0 # theta 2
-        Q[2,2]=1 # v1
-        Q[3,3]=1 # v2
-        Q[4,4]=1 # dx (finger-ball)
-        Q[5,5]=1 # dy
+        Q[0, 0] = 0  # cos(theta) of outer arm
+        Q[1, 1] = 0  # cos(theta) of inner arm
+        Q[2, 2] = 1  # sin(theta) of outer arm
+        Q[3, 3] = 1  # sin(theta) of inner arm
+        Q[4, 4] = 1  # velocity of outer arm
+        Q[5, 5] = 1  # velocity of outer arm
+        Q[6, 6] = 1  # fingertip location x
+        Q[7, 7] = 1  # fingertip location y
+
         return Q
 
 def LqrFhD(A,B,Q,R,N=10):
@@ -67,7 +92,6 @@ def LqrFhD(A,B,Q,R,N=10):
     F=np.matmul(c3,c5) # inv(Bt*Pk*B+R)*(Bt*Pk*A)
     return F
 
-
 def LqrFhD2(A,B,Q,R,N=10):
     PN=Q
     Bt=np.transpose(B)
@@ -83,22 +107,29 @@ def LqrFhD2(A,B,Q,R,N=10):
     return F
 
 
+def lqrFhD(A,B,Q,R,N=10):
+
+    Pk = Q
+
+    for i in range(0, N-1):
+        temp = scipy.linalg.solve_discrete_are(A, B, Pk, R)
+        Pk = np.copy(temp)
+        print "calculating p"+i+"\n"
+
+    Bt = np.transpose(B)
+    Bt_Pk = np.matmul(Bt, Pk)
+    Bt_Pk_B = np.matmul(Bt_Pk, B)
+    Bt_Pk_A = np.matmul(Bt_Pk, A)
+    F = np.matmul(inv(Bt_Pk_B+R), Bt_Pk_A)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
+
+    return F
+
+'''
 
 
 
 
-def getError(A, B, model, uk, xnu, xreal):
-    x = xnu[0,0:6]
-    x = np.hstack((x, uk))
-    netOut = model.predict(x)
-    x = np.transpose(x[0, 0:6])
-    ABOout = np.matmul(A, x)
-    ABOout = ABOout + np.matmul(B, np.transpose(uk))
-    ABOout = np.transpose(ABOout)
-    print "net-real: " + str(mean_squared_error(netOut, xreal))
-    print "AB-real: " + str(mean_squared_error(ABOout, xreal))
-   # print "AB-net: " + str(mean_squared_error(ABOout, netOut))
-    return
+'''
 def getAll(Q,size):
     out = np.copy(Q.pop())
     Q.appendleft(np.copy(out))
@@ -112,7 +143,7 @@ def getAll(Q,size):
         input = np.vstack((input, inp))
         target = np.vstack((target, tar))
     return [input,target]
-
+'''
 
 def scanUopt(model,xu,ball):
     u1=-0.002
