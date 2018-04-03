@@ -21,7 +21,7 @@ class Emulator:
 
         # Learning algorithm parameters
         self.batch = 100  # batch size
-        self.epochs = 20  # number of epochs #TODO: Change back to 50
+        self.epochs = 20  # number of epochs
         self.rate = 0.01  # learning rate
 
         # place holders for training data sets
@@ -84,7 +84,7 @@ class Emulator:
         trainIn, trainOut = db.getAll()
         for epoch in range(self.epochs):
             _, cost = self.sess.run([self.trainOp, self.costFunc], feed_dict={self.xuIn: trainIn, self.xOutReal: trainOut})
-            print "Epoch: {} Cost Value: {}".format(epoch, cost)  # TODO: Fix the error print
+            print "Epoch: {} Cost Value: {}".format(epoch, cost)
         #TODO: add timestamp
         self.saver.save(self.sess, modelPath)
         print "Model was saved in the following path: " + modelPath
@@ -97,5 +97,6 @@ class Emulator:
             print "Model was restored from the following path: " + modelPath
             self.restored = True
 
-        self.sess.run(self.xOut, feed_dict={self.xuIn: xk_uk_in})
-        return self.xOut
+        xOut = self.sess.run(self.xOut, feed_dict={self.xuIn: xk_uk_in})
+
+        return xOut

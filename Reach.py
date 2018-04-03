@@ -12,10 +12,10 @@ states = ('INITIALIZE', 'TRAIN', 'RUN')
 state = states[0]
 
 # Algorithm main building blocks
-db = DataSet(size=50)               # Initializing an empty data base
+db = DataSet(size=10)               # Initializing an empty data base
 simulator = RealWorldSimulator()    # Initialize the RealWorldSimulator
 emulator = Emulator()               # Initialize emulator
-controller = Controller()           # Initialize Controller
+controller = Controller(emulator)   # Initialize Controller
 
 
 if state == 'INITIALIZE':
@@ -24,20 +24,21 @@ if state == 'INITIALIZE':
     simulator.generateRandomSamples(db.size, db)
 
     # Train model with available samples in the data base.
-    emulator.train(db, state)    #TODO: Need to train untill accuracy is higher.
-    emulator.train(db, state)
-    state = 'TRAIN'
+    for i in range(20):
+        emulator.train(db, state)
+    state = states[1]
 
 if state == 'TRAIN':
     # In this state, the algorithm performs both ANN Training alongside LQR Control.
-    while True:
+    i = 0
+    while i < 5:
         emulator.train(db, state)
         A, B = deriveAB(simulator.xk, simulator.uk, emulator)
         uk = controller.calculateNextAction(A, B, simulator.xk)
         xk_uk = np.hstack((np.copy(simulator.xk), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
         db.append(xk_uk, xk_1)
-        break
+        i = i + 1
 '''
 else state == 'RUN':
     print "Nothing now, predictions later"

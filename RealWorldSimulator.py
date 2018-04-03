@@ -1,8 +1,5 @@
-import mujoco_py
-import pickle
 import numpy as np
 import gym
-import math
 import getpass
 
 # Username for storing and loading purposes

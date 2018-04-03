@@ -10,29 +10,22 @@ import scipy.linalg
 #TODO: This function needs to be verified
 def deriveAB(xk, uk, model, delta=0.01):
     xk_uk = np.hstack((xk, uk))
-    xk_uk = np.reshape(xk_uk, [1, 10])
-
+    xk_uk = np.reshape(xk_uk, (1, 10))
     xkDim = 8
     ukDim = 2
     A = np.ones((xkDim, xkDim))
     B = np.ones((xkDim, ukDim))
-    '''
     for i in range(0, xkDim + ukDim):
-        x = np.copy(xk_uk)
-        x[i] = np.copy(xk_uk[i] + delta)
-        d2 = model.predict(x)
-        x = np.copy(xk_uk)
-        x[i] = np.copy(xk_uk[i] - delta)
-        d1 = model.predict(x)
+        xk_uk_c = np.copy(xk_uk)
+        xk_uk_c[:, i] = xk_uk[:, i] + delta
+        xk1_d2 = model.predict(xk_uk_c)
+        xk_uk_c = np.copy(xk_uk)
+        xk_uk_c[:, i] = np.copy(xk_uk[:, i] - delta)
+        xk1_d1 = model.predict(xk_uk_c)
         if i < xkDim:
-            print "d1"
-            print d1
-            print "d2"
-            print d2
-
-            A[:, i] = (d2 - d1) / (2*delta)
+            A[:, i] = (xk1_d2 - xk1_d1) / (2*delta)
         else:
-            B[:, i - xkDim] = (d2 - d1) / (2*delta)'''
+            B[:, i - xkDim] = (xk1_d2 - xk1_d1) / (2*delta)
     return [A, B]
 
 
