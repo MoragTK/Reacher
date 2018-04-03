@@ -13,8 +13,8 @@ class Controller:
     def __init__(self, model):
         self.R = np.identity(ukDim)*0.01
         self.Q = self.setQ()
-        self.numOfLQRSteps = 2  # TODO: Return to 10
-        self.threshold = 5
+        self.numOfLQRSteps = 3  # TODO: Return to 10
+        self.threshold = 0.01
         self.model = model
 
     # Calculate next step using the iLQR algorithm
@@ -28,27 +28,25 @@ class Controller:
             arrayB.append(B)
 
         prevCost = 0
+        simNewTrajectory = True
         while True:
-            Fk = self.lqrFhd(arrayA, arrayB)
+            if simNewTrajectory is True:
+                Fk = self.lqrFhd(arrayA, arrayB)
+            else:
+                Fk = Fk*0.5 # TODO: Not Correct
             nextAction = -np.matmul(Fk[0], x0)
             newArrayA, newArrayB = self.calculateSystemDynamics(Fk, x0)
-            print "Fk is: {}".format(Fk)  # TODO: Delete
-            print "nextAction is: {}".format(nextAction)  # TODO: Delete
-            print "arrayA is: {}".format(arrayA)  # TODO: Delete
-            print "newArrayA is: {}".format(newArrayA)  # TODO: Delete
-            exit()
             cost = self.calculateCost(arrayA, arrayB, newArrayA, newArrayB)
-            print "Cost: {} Difference: {}".format(cost, abs(prevCost-cost))  # TODO: Delete
-            if cost <= prevCost:
-                if abs(prevCost - cost) < self.threshold:
-                    return nextAction
-                else:
-                    prevCost = cost
-                    arrayA = newArrayA
-                    arrayB = newArrayB
-            else: # cost > prevCost
-                print "cost is growing!!! fix this" #TODO: add code here
-
+            print "Cost: {}".format(cost)  # TODO: Delete
+            if cost < prevCost:
+                if (abs(prevCost - cost))/cost < self.threshold:
+                        return nextAction
+                arrayA = np.copy(newArrayA)
+                arrayB = np.copy(newArrayB)
+                simNewTrajectory = True
+            else:
+                simNewTrajectory = False
+            prevCost = cost
 
     # LQR
     def lqrFhd(self, arrayA, arrayB):
@@ -65,7 +63,7 @@ class Controller:
             Bt_Pk_A = np.matmul(Bt_Pk, A)
             F = np.matmul(inv(Bt_Pk_B + self.R), Bt_Pk_A)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
             Fk.insert(0, F)
-
+        Fk = np.asarray(Fk)
         return Fk
 
     def calculateSystemDynamics(self, Fk, x0):
@@ -77,14 +75,12 @@ class Controller:
             A, B = deriveAB(xk, uk, self.model)
             arrayA.append(A)
             arrayB.append(B)
-
         return np.copy(arrayA), np.copy(arrayB)
 
     def calculateCost(self, arrayA, arrayB, newArrayA, newArrayB):  # TODO: Possibly calculate cost in a different way - with Xk+1 = AXk + BUk
 
         numOfElemsA = arrayA[0].shape[0]*arrayA[0].shape[1]
         numOfElemsB = arrayB[0].shape[0]*arrayB[0].shape[1]
-
         lineA = []
         lineB = []
         newLineA = []
@@ -96,11 +92,16 @@ class Controller:
             newLineB = np.hstack((newLineB, newArrayB[i].reshape(numOfElemsB)))
 
         costA = costB = 0
-        for i in range(numOfElemsA):
-            costA += (lineA[i] - newLineA[i])/self.numOfLQRSteps
-            costB += (lineB[i] - newLineB[i])/self.numOfLQRSteps
-        totalCost = costA + costB
+        for i in range(numOfElemsA*self.numOfLQRSteps):
+            costA += ((lineA[i] - newLineA[i])**2)/self.numOfLQRSteps
+        #print "cost A: {}".format(costA) #TODO DELETE
 
+        for i in range(numOfElemsB*self.numOfLQRSteps):
+            costB += ((lineB[i] - newLineB[i])**2)/self.numOfLQRSteps
+        #print "cost B: {}".format(costB) #TODO DELETE
+
+        totalCost = costA + costB
+        #print "totalCost: {} ".format(totalCost)
         return totalCost
 
     # set Q function

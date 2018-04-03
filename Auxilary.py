@@ -8,25 +8,33 @@ import scipy.linalg
 # Receives the model, the input vector and delta
 # Returns the state space matrices A and B.
 #TODO: This function needs to be verified
-def deriveAB(xk, uk, model, delta=0.01):
-    xk_uk = np.hstack((xk, uk))
-    xk_uk = np.reshape(xk_uk, (1, 10))
+def deriveAB(xk_in, uk_in, model, eps=1e-4):
+    xk_ = np.reshape(np.copy(xk_in), (1, 8))
+    uk_ = np.reshape(np.copy(uk_in), (1, 2))
     xkDim = 8
     ukDim = 2
     A = np.ones((xkDim, xkDim))
     B = np.ones((xkDim, ukDim))
-    for i in range(0, xkDim + ukDim):
-        xk_uk_c = np.copy(xk_uk)
-        xk_uk_c[:, i] = xk_uk[:, i] + delta
-        xk1_d2 = model.predict(xk_uk_c)
-        xk_uk_c = np.copy(xk_uk)
-        xk_uk_c[:, i] = np.copy(xk_uk[:, i] - delta)
-        xk1_d1 = model.predict(xk_uk_c)
-        if i < xkDim:
-            A[:, i] = (xk1_d2 - xk1_d1) / (2*delta)
-        else:
-            B[:, i - xkDim] = (xk1_d2 - xk1_d1) / (2*delta)
-    return [A, B]
+
+    for i in range(0, xkDim):
+        xk = np.copy(xk_)
+        xk[:, i] += eps
+        state_inc = model.predict(xk, uk_)
+        xk = np.copy(xk_)
+        xk[:, i] -= eps
+        state_dec = model.predict(xk, uk_)
+        A[:, i] = (state_inc - state_dec) / (2 * eps)
+
+    for i in range(0, ukDim):
+        uk = np.copy(uk_)
+        uk[:, i] += eps
+        state_inc = model.predict(xk_, uk)
+        uk = np.copy(uk_)
+        uk[:, i] -= eps
+        state_dec = model.predict(xk_, uk)
+        B[:, i] = (state_inc - state_dec) / (2 * eps)
+
+    return A, B
 
 
 def getError(A, B, model, uk, xnu, xreal):

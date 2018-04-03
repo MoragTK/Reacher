@@ -90,7 +90,8 @@ class Emulator:
         print "Model was saved in the following path: " + modelPath
 
     # Use the model to predict the result of the xk uk input
-    def predict(self, xk_uk_in):
+    def predict(self, xk, uk):
+        xk_uk_in = np.hstack((xk, uk))
         if self.restored is False:
             self.saver = tf.train.import_meta_graph(modelPath + '.meta')
             self.saver.restore(self.sess, tf.train.latest_checkpoint(modelDir))
