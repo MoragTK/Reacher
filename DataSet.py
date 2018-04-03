@@ -6,8 +6,8 @@ import numpy as np
 class DataSet:
 
     # Constructor
-    def __init__(self):
-        self.size = 50 #TODO : Change back to 1000
+    def __init__(self, size):
+        self.size = size
         self.Q = deque(maxlen=self.size)
         return
 
@@ -32,8 +32,4 @@ class DataSet:
             tmpIn = np.hstack((xuIn[i, :], xOut[i, :]))
             self.Q.appendleft(np.copy(tmpIn))
         return [np.copy(xuIn), np.copy(xOut)]
-        # TODO: Normalize data and shuffle it
 
- #   def normalizeData(self):
-
-  #  def shuffleData(self):

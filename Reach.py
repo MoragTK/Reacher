@@ -6,17 +6,19 @@ from Controller import Controller
 import numpy as np
 
 
-'''Mode'''
+# Mode
 states = ('INITIALIZE', 'TRAIN', 'RUN')
 # Choose state HERE:
 state = states[0]
 
-if state == 'INITIALIZE':
+# Algorithm main building blocks
+db = DataSet(size=50)               # Initializing an empty data base
+simulator = RealWorldSimulator()    # Initialize the RealWorldSimulator
+emulator = Emulator()               # Initialize emulator
+controller = Controller()           # Initialize Controller
 
-    db = DataSet()                    # Initializing an empty data base
-    simulator = RealWorldSimulator()  # Initialize the RealWorldSimulator
-    emulator = Emulator()             # Initialize emulator
-    controller = Controller()         # Initialize Controller
+
+if state == 'INITIALIZE':
 
     # Generate random samples for the initial training and insert them to the data set.
     simulator.generateRandomSamples(db.size, db)

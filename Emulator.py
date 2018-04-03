@@ -85,7 +85,7 @@ class Emulator:
         for epoch in range(self.epochs):
             _, cost = self.sess.run([self.trainOp, self.costFunc], feed_dict={self.xuIn: trainIn, self.xOutReal: trainOut})
             print "Epoch: {} Cost Value: {}".format(epoch, cost)  # TODO: Fix the error print
-
+        #TODO: add timestamp
         self.saver.save(self.sess, modelPath)
         print "Model was saved in the following path: " + modelPath
 
