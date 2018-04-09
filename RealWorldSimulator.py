@@ -34,6 +34,10 @@ class RealWorldSimulator:
 
     # Constructor
     def __init__(self):
+
+        # define parameters:
+        self.maxSpeed = 200
+
         # define tensors
         self.xk = np.zeros(8)    # Current State
         self.uk = np.zeros(2)    # Current action taken
@@ -47,21 +51,15 @@ class RealWorldSimulator:
         self.ball[1] = self.observation[9]
 
     # Generates random samples for the initial data set.
-    def generateRandomSamples(self, numOfSamples, dataBase):
-        for i in range(numOfSamples):
-            self.env.render()
-            self.uk = self.env.action_space.sample()                        # Create a random action uk
-            xk_uk_input = np.hstack((self.xk, self.uk))                     # The input vector for the neural network
-            self.observation, reward, done, info = self.env.step(self.uk)   # Perform the random action uk
-            self.deriveXnFromObservation()
-            dataBase.append(xk_uk_input, self.xk)
+    def generateRandomAction(self):
+            return self.env.action_space.sample()                        # Create a random action uk
 
     # Performs the action uk on the current state and returns the next state.
     def actUk(self, uk):
         self.uk = uk
         self.observation, reward, done, info = self.env.step(self.uk)
         self.deriveXnFromObservation()
-        self.env.render()
+        #self.env.render()
         return np.copy(self.xk)
 
     # Resets the simulator state (in case of exception)
@@ -79,8 +77,8 @@ class RealWorldSimulator:
         self.xk[3] = np.copy(self.observation[3])  # sin(Theta) of outer arm
         self.xk[4] = np.copy(self.observation[4])  # fingertip location x
         self.xk[5] = np.copy(self.observation[5])  # fingertip location y
-        self.xk[6] = np.copy(self.observation[6])  # v1 (Angular Velocity of lower arm)
-        self.xk[7] = np.copy(self.observation[7])  # v2 (Angular Velocity of upper arm)
+        self.xk[6] = np.copy(self.observation[6])/self.maxSpeed  # v1 (Angular Velocity of lower arm)
+        self.xk[7] = np.copy(self.observation[7])/self.maxSpeed  # v2 (Angular Velocity of upper arm)
         self.ball[0] = np.copy(self.observation[8])  # ball location x
         self.ball[1] = np.copy(self.observation[9])  # ball location y
         # TODO: do a sanity check that for a certain observation, the values make sense

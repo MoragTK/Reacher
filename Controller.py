@@ -48,23 +48,44 @@ class Controller:
                 simNewTrajectory = False
             prevCost = cost
 
+
+
+
     # LQR
-    def lqrFhd(self, arrayA, arrayB):
-        Pk = self.Q
-        Fk = []
-        for i in range(self.numOfLQRSteps):
-            A = arrayA[i]
-            B = arrayB[i]
-            temp = solve_discrete_are(A, B, Pk, self.R)
-            Pk = np.copy(temp)
-            Bt = np.transpose(B)
-            Bt_Pk = np.matmul(Bt, Pk)
-            Bt_Pk_B = np.matmul(Bt_Pk, B)
-            Bt_Pk_A = np.matmul(Bt_Pk, A)
-            F = np.matmul(inv(Bt_Pk_B + self.R), Bt_Pk_A)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
-            Fk.insert(0, F)
-        Fk = np.asarray(Fk)
-        return Fk
+
+
+
+    def lqrFhd(self, A, B):
+        Q = self.Q
+        R = self.R
+        N = self.numOfLQRSteps
+        PN = Q
+        At = np.transpose(A)
+        Bt = np.transpose(B)
+        for i in range(0, N - 1):
+            a1 = np.matmul(At, PN)
+            a2 = np.matmul(a1, A) + Q  # At*Pk*A+Q
+            a3 = np.matmul(At, PN)
+            a4 = np.matmul(a3, B)  # At*Pk*B
+            a5 = np.matmul(Bt, PN)
+            a6 = np.matmul(a5, B) + R  # Bt*Pk*B+R
+            a7 = inv(a6)  # inv(R+Bt*Pk*B)
+            a8 = np.matmul(Bt, PN)
+            a9 = np.matmul(a8, A)  # Bt*Pk*A
+
+            b1 = np.matmul(a4, a7)  # (At*Pk*B)*inv(R+Bt*Pk*B)
+            b2 = -np.matmul(b1, a9) + a2  # At*Pk*A+Q-(At*Pk*B)*inv(R+Bt*Pk*B)*(Bt*Pk*A)
+
+            PN = np.copy(b2)
+
+        c1 = np.matmul(Bt, PN)
+        c2 = np.matmul(c1, B) + R  # Bt*Pk*B+R
+        c3 = inv(c2)
+        c4 = np.matmul(Bt, PN)
+        c5 = np.matmul(c4, A)  # Bt*Pk*A
+        F = np.matmul(c3, c5)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
+        return F
+
 
     def calculateSystemDynamics(self, Fk, x0):
         arrayA = []
@@ -109,11 +130,44 @@ class Controller:
         Q = np.zeros((xkDim, xkDim))
         Q[0, 0] = 0  # cos(theta) of outer arm
         Q[1, 1] = 0  # cos(theta) of inner arm
-        Q[2, 2] = 1  # sin(theta) of outer arm
-        Q[3, 3] = 1  # sin(theta) of inner arm
+        Q[2, 2] = 0  # sin(theta) of outer arm
+        Q[3, 3] = 0  # sin(theta) of inner arm
         Q[4, 4] = 1  # velocity of outer arm
         Q[5, 5] = 1  # velocity of outer arm
         Q[6, 6] = 1  # fingertip location x
         Q[7, 7] = 1  # fingertip location y
 
         return Q
+
+'''
+def lqrFhd2(self, A, B):
+    Pk = self.Q
+    for i in range(self.numOfLQRSteps):
+        temp = solve_discrete_are(A, B, Pk, self.R)
+        Pk = np.copy(temp)
+        Bt = np.transpose(B)
+        Bt_Pk = np.matmul(Bt, Pk)
+        Bt_Pk_B = np.matmul(Bt_Pk, B)
+        Bt_Pk_A = np.matmul(Bt_Pk, A)
+        Fk = np.matmul(inv(Bt_Pk_B + self.R), Bt_Pk_A)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
+
+    return Fk
+
+      # LQR
+    def lqrFhd(self, arrayA, arrayB):
+        Pk = self.Q
+        Fk = []
+        for i in range(self.numOfLQRSteps):
+            A = arrayA[i]
+            B = arrayB[i]
+            temp = solve_discrete_are(A, B, Pk, self.R)
+            Pk = np.copy(temp)
+            Bt = np.transpose(B)
+            Bt_Pk = np.matmul(Bt, Pk)
+            Bt_Pk_B = np.matmul(Bt_Pk, B)
+            Bt_Pk_A = np.matmul(Bt_Pk, A)
+            F = np.matmul(inv(Bt_Pk_B + self.R), Bt_Pk_A)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
+            Fk.insert(0, F)
+        Fk = np.asarray(Fk)
+        return Fk
+'''

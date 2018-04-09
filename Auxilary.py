@@ -2,13 +2,14 @@ import numpy as np
 from numpy.linalg import inv
 from sklearn.metrics import mean_squared_error
 import scipy.linalg
+import RealWorldSimulator
 
 
 #CalculateAB
 # Receives the model, the input vector and delta
 # Returns the state space matrices A and B.
 #TODO: This function needs to be verified
-def deriveAB(xk_in, uk_in, model, eps=1e-4):
+def deriveAB(xk_in, uk_in, model, eps=5):
     xk_ = np.reshape(np.copy(xk_in), (1, 8))
     uk_ = np.reshape(np.copy(uk_in), (1, 2))
     xkDim = 8
@@ -18,23 +19,34 @@ def deriveAB(xk_in, uk_in, model, eps=1e-4):
 
     for i in range(0, xkDim):
         xk = np.copy(xk_)
-        xk[:, i] += eps
+        xk[0, i] += eps
         state_inc = model.predict(xk, uk_)
+       # print 'state_inc' +str(state_inc)
         xk = np.copy(xk_)
-        xk[:, i] -= eps
+        xk[0, i] -= eps
+        #print "xk: {}".format(xk)
         state_dec = model.predict(xk, uk_)
+        #print 'state_dec' +str(state_dec)
         A[:, i] = (state_inc - state_dec) / (2 * eps)
 
     for i in range(0, ukDim):
         uk = np.copy(uk_)
-        uk[:, i] += eps
+        uk[0, i] += eps
         state_inc = model.predict(xk_, uk)
         uk = np.copy(uk_)
-        uk[:, i] -= eps
+        uk[0, i] -= eps
         state_dec = model.predict(xk_, uk)
         B[:, i] = (state_inc - state_dec) / (2 * eps)
-
     return A, B
+
+
+def generateRandomSamples(numOfSamples, db, simulator):
+    for i in range(numOfSamples):
+        xk = simulator.xk
+        uk = simulator.generateRandomAction()
+        xk_1 = simulator.actUk(uk)
+        xk_uk_input = np.hstack((xk,uk))
+        db.append(xk_uk_input,xk_1)
 
 
 def getError(A, B, model, uk, xnu, xreal):

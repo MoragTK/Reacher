@@ -1,11 +1,12 @@
 import tensorflow as tf
 import numpy as np
 import getpass
-
+import time
 # Username for storing and loading purposes
 username = getpass.getuser()
-modelDir = '/home/' + username + '/PycharmProjects/Reacher/net/'
-modelPath = '/home/' + username + '/PycharmProjects/Reacher/net/emulator'
+modelDir = '/home/' + username + '/PycharmProjects/Reacher/network/'
+modelPath = '/home/' + username + '/PycharmProjects/Reacher/network/emulator'
+modelPathTimed = '/home/' + username + '/PycharmProjects/Reacher/network/emulatorrandom9.4-16:54'
 
 
 class Emulator:
@@ -21,7 +22,7 @@ class Emulator:
 
         # Learning algorithm parameters
         self.batch = 100  # batch size
-        self.epochs = 20  # number of epochs
+        self.epochs = 50  # number of epochs
         self.rate = 0.01  # learning rate
 
         # place holders for training data sets
@@ -76,28 +77,36 @@ class Emulator:
     # Train model with data that is currently in the data base.
     def train(self, db, state):
         if state == 'TRAIN' and (self.restored is False):
-            self.saver = tf.train.import_meta_graph(modelPath + '.meta')
-            self.saver.restore(self.sess, tf.train.latest_checkpoint(modelDir))
-            print "Model was restored from the following path: " + modelPath
+            self.restoreModel()
             self.restored = True
 
         trainIn, trainOut = db.getAll()
         for epoch in range(self.epochs):
             _, cost = self.sess.run([self.trainOp, self.costFunc], feed_dict={self.xuIn: trainIn, self.xOutReal: trainOut})
-            print "Epoch: {} Cost Value: {}".format(epoch, cost)
-        #TODO: add timestamp
-        self.saver.save(self.sess, modelPath)
-        print "Model was saved in the following path: " + modelPath
+            if epoch==49:
+                print "Epoch: {} Cost Value: {}".format(epoch, cost)
+
 
     # Use the model to predict the result of the xk uk input
     def predict(self, xk, uk):
         xk_uk_in = np.hstack((xk, uk))
         if self.restored is False:
-            self.saver = tf.train.import_meta_graph(modelPath + '.meta')
-            self.saver.restore(self.sess, tf.train.latest_checkpoint(modelDir))
-            print "Model was restored from the following path: " + modelPath
+            self.restoreModel()
             self.restored = True
 
         xOut = self.sess.run(self.xOut, feed_dict={self.xuIn: xk_uk_in})
 
         return xOut
+
+    def saveModel(self, property="random"):
+        #TODO: add timestamp
+        d = time.gmtime()
+        time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + ":" + str(d[4])
+        self.saver.save(self.sess, modelPath+property+time_stamp)
+        print "Model was saved in the following path: " + modelPath
+
+    def restoreModel(self):
+        self.saver = tf.train.import_meta_graph(modelPathTimed + '.meta')
+        self.saver.restore(self.sess, tf.train.latest_checkpoint(modelDir))
+        print "Model was restored from the following path: " + modelPathTimed
+

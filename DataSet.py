@@ -9,6 +9,7 @@ class DataSet:
     def __init__(self, size):
         self.size = size
         self.Q = deque(maxlen=self.size)
+        self.numOfElements = 0
         return
 
     # append receives Xk, Uk, Xk+1 and inserts the sample into the data set. (<xn,un,xn+1>)
@@ -17,7 +18,8 @@ class DataSet:
         xk_1_c = np.copy(xk_1)
         sample = np.hstack((xk_uk_c, xk_1_c))
         self.Q.append(sample)
-        return
+        if self.numOfElements < self.size:
+            self.numOfElements+=1
 
 
     # getAll - returns all data base for training purposes, normalized and shuffled.
