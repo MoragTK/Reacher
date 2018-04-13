@@ -31,7 +31,7 @@ class Controller:
         minCost = 1e+100
         simNewTrajectory = True
         i = 0
-        while i < 100:
+        while i < 60:
 
             if simNewTrajectory is True:
                 Fk, Pk = self.lqrFhd(arrayA, arrayB)
@@ -56,9 +56,9 @@ class Controller:
                #     return nextAction
                 if cost < minCost:
                     Fk_x0 = np.matmul(Fk[0], x0)
-                    nextAction = np.asarray(np.negative(Fk_x0))
+                    nextAction = np.asarray(np.negative(Fk_x0)) #TODO: Generate randome action if it never gets here inside that condition
                     minCost = cost
-                    print "New Minimum Cost! {} ".format(minCost)
+                    #print "New Minimum Cost! {} ".format(minCost)
 
                 arrayA = newArrayA
                 arrayB = newArrayB
@@ -67,6 +67,7 @@ class Controller:
                 simNewTrajectory = False
             prevCost = cost
             i += 1
+        print "Minimum Cost: {}".format(minCost)
         return nextAction
 
     # LQR

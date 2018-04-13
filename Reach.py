@@ -4,15 +4,15 @@ from DataSet import DataSet
 from Auxilary import deriveAB
 from Controller import Controller
 import numpy as np
-
+import time
 
 # Mode
 states = ('INITIALIZE', 'TRAIN', 'RUN')
 # Choose state HERE:
-state = states[0]
+state = states[1]
 
 # Algorithm main building blocks
-db = DataSet(size=10)               # Initializing an empty data base
+db = DataSet(size=1000)               # Initializing an empty data base
 simulator = RealWorldSimulator()    # Initialize the RealWorldSimulator
 emulator = Emulator()               # Initialize emulator
 controller = Controller(emulator)   # Initialize Controller
@@ -24,16 +24,28 @@ if state == 'INITIALIZE':
 
 
     # Train model with available samples in the data base.
-    for i in range(3):
+    initial_time=time.time()
+    t=initial_time
+    while time.time()<5*60*60+initial_time:
         simulator.generateRandomSamples(db.size, db)
         emulator.train(db, state)
+        if time.time()>t+(30*60):
+            emulator.saveModel()
+            t=time.time()
     state = states[1]
 
 if state == 'TRAIN':
     # In this state, the algorithm performs both ANN Training alongside LQR Control.
+
+    emulator.restoreModel()
     i = 0
-    while i < 6:
-        emulator.train(db, state)
+    start = time.time()
+    t1 = start
+    t2 = start
+    while True: #time.time() < 10 * 60 * 60 + start:
+        if db.numOfElements == db.size:
+            emulator.train(db, state)
+
         A, B = deriveAB(simulator.getXk(), simulator.getUk(), emulator)
         xTarget = simulator.getXk()
         ball = simulator.getBall()
@@ -43,7 +55,15 @@ if state == 'TRAIN':
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
         db.append(xk_uk, xk_1)
-        i = i + 1
+
+        if time.time() > t1 + (10 * 60):
+            simulator.reset()
+            t1 = time.time()
+
+        if time.time() > t2 + (60 * 60):
+            emulator.saveModel(property="_LQR_")
+            t2 = time.time()
+    emulator.saveModel(property="_LQR_")
 '''
 else state == 'RUN':
     print "Nothing now, predictions later"

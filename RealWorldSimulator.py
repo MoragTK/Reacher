@@ -69,7 +69,6 @@ class RealWorldSimulator:
         self.observation = self.env.reset()  # reset the system to a new state
         self.deriveXnFromObservation()
         self.env.render()
-        return np.copy(self.xn)
 
     # Derives the state parameters that are relevant to our program from the current observation tensor.
     def deriveXnFromObservation(self):

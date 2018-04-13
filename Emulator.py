@@ -6,7 +6,7 @@ import time
 username = getpass.getuser()
 modelDir = '/home/' + username + '/PycharmProjects/Reacher/network/'
 modelPath = '/home/' + username + '/PycharmProjects/Reacher/network/emulator'
-modelPathTimed = '/home/' + username + '/PycharmProjects/Reacher/network/emulatorrandom10.4-13_42'
+modelPathTimed = '/home/' + username + '/PycharmProjects/Reacher/network/emulatorrandom10.4-13:42'
 
 
 class Emulator:
@@ -22,7 +22,7 @@ class Emulator:
 
         # Learning algorithm parameters
         self.batch = 100  # batch size
-        self.epochs = 20  # number of epochs
+        self.epochs = 50  # number of epochs
         self.rate = 0.01  # learning rate
 
         # place holders for training data sets
