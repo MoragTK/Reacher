@@ -21,21 +21,26 @@ controller = Controller(emulator)   # Initialize Controller
 if state == 'INITIALIZE':
 
     # Generate random samples for the initial training and insert them to the data set.
-    simulator.generateRandomSamples(db.size, db)
+
 
     # Train model with available samples in the data base.
-    for i in range(20):
+    for i in range(3):
+        simulator.generateRandomSamples(db.size, db)
         emulator.train(db, state)
     state = states[1]
 
 if state == 'TRAIN':
     # In this state, the algorithm performs both ANN Training alongside LQR Control.
     i = 0
-    while i < 5:
+    while i < 6:
         emulator.train(db, state)
-        A, B = deriveAB(simulator.xk, simulator.uk, emulator)
-        uk = controller.calculateNextAction(A, B, simulator.xk)
-        xk_uk = np.hstack((np.copy(simulator.xk), np.copy(uk)))
+        A, B = deriveAB(simulator.getXk(), simulator.getUk(), emulator)
+        xTarget = simulator.getXk()
+        ball = simulator.getBall()
+        xTarget[4, 0] = abs(xTarget[4, 0] - ball[0])
+        xTarget[5, 0] = abs(xTarget[5, 0] - ball[1])
+        uk = controller.calculateNextAction(A, B, xTarget)
+        xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
         db.append(xk_uk, xk_1)
         i = i + 1

@@ -9,36 +9,60 @@ import scipy.linalg
 # Returns the state space matrices A and B.
 #TODO: This function needs to be verified
 def deriveAB(xk_in, uk_in, model, eps=1e-4):
-    xk_ = np.reshape(np.copy(xk_in), (1, 8))
-    uk_ = np.reshape(np.copy(uk_in), (1, 2))
     xkDim = 8
     ukDim = 2
     A = np.ones((xkDim, xkDim))
     B = np.ones((xkDim, ukDim))
 
     for i in range(0, xkDim):
-        xk = np.copy(xk_)
-        xk[:, i] += eps
-        state_inc = model.predict(xk, uk_)
-        xk = np.copy(xk_)
-        xk[:, i] -= eps
-        state_dec = model.predict(xk, uk_)
-        A[:, i] = (state_inc - state_dec) / (2 * eps)
+        xk = np.copy(xk_in)
+        xk[i, 0] += eps
+        state_inc = model.predict(xk, uk_in)
+        xk = np.copy(xk_in)
+        xk[i, 0] -= eps
+        state_dec = model.predict(xk, uk_in)
+        A[:, i] = (state_inc[:, 0] - state_dec[:, 0]) / (2 * eps) # TODO: Is this how A should be? or transpose?
 
     for i in range(0, ukDim):
-        uk = np.copy(uk_)
-        uk[:, i] += eps
-        state_inc = model.predict(xk_, uk)
-        uk = np.copy(uk_)
-        uk[:, i] -= eps
-        state_dec = model.predict(xk_, uk)
-        B[:, i] = (state_inc - state_dec) / (2 * eps)
+        uk = np.copy(uk_in)
+        uk[i, 0] += eps
+        state_inc = model.predict(xk_in, uk)
+        uk = np.copy(uk_in)
+        uk[i, 0] -= eps
+        state_dec = model.predict(xk_in, uk)
+        B[:, i] = (state_inc[:, 0] - state_dec[:, 0]) / (2 * eps)
 
     return A, B
 
 
+def xMx(x, M):
+    xt = np.transpose(x)
+    xt_M = np.matmul(xt, M)
+    xt_M_x = np.matmul(xt_M, x)
+    return xt_M_x
+
+
+def solveRiccati(A, B, Pk, Q, R):
+
+    At = np.transpose(A)
+    Bt = np.transpose(B)
+    AtPk = np.matmul(At, Pk)
+    BtPk = np.matmul(Bt, Pk)
+
+    AtPkA = np.matmul(AtPk, A)
+    AtPkB = np.matmul(AtPk, B)
+    BtPkA = np.matmul(BtPk, A)
+    BtPkB = np.matmul(BtPk, B)
+
+    inv_BtPkB_R = inv(BtPkB + R)  # (bt*Pk*B + R)^-1
+    t_ = np.matmul(AtPkB, inv_BtPkB_R)  # (At*Pk*B) * (bt*Pk*B + R)^-1
+    t = np.matmul(t_, BtPkA)           # (At*Pk*B) * (bt*Pk*B + R)^-1 * (Bt*Pk*A)
+
+    result = AtPkA - t + Q
+    return np.copy(result)
+
 def getError(A, B, model, uk, xnu, xreal):
-    x = xnu[0,0:6]
+    x = xnu[0, 0:6]
     x = np.hstack((x, uk))
     netOut = model.predict(x)
     x = np.transpose(x[0, 0:6])

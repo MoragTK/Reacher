@@ -51,10 +51,10 @@ class RealWorldSimulator:
         for i in range(numOfSamples):
             self.env.render()
             self.uk = self.env.action_space.sample()                        # Create a random action uk
-            xk_uk_input = np.hstack((self.xk, self.uk))                     # The input vector for the neural network
+            xk_uk_input = np.vstack((self.getXk(), self.getUk()))                     # The input vector for the neural network
             self.observation, reward, done, info = self.env.step(self.uk)   # Perform the random action uk
             self.deriveXnFromObservation()
-            dataBase.append(xk_uk_input, self.xk)
+            dataBase.append(xk_uk_input, self.getXk())
 
     # Performs the action uk on the current state and returns the next state.
     def actUk(self, uk):
@@ -62,10 +62,10 @@ class RealWorldSimulator:
         self.observation, reward, done, info = self.env.step(self.uk)
         self.deriveXnFromObservation()
         self.env.render()
-        return np.copy(self.xk)
+        return self.getXk()
 
     # Resets the simulator state (in case of exception)
-    def reset(self):
+    def reset(self): #TODO: Check return value dimensions
         self.observation = self.env.reset()  # reset the system to a new state
         self.deriveXnFromObservation()
         self.env.render()
@@ -85,4 +85,11 @@ class RealWorldSimulator:
         self.ball[1] = np.copy(self.observation[9])  # ball location y
         # TODO: do a sanity check that for a certain observation, the values make sense
 
+    def getXk(self):
+        return np.reshape(np.copy(self.xk), (8, 1))
 
+    def getUk(self):
+        return np.reshape(np.copy(self.uk), (2, 1))
+
+    def getBall(self):
+        return np.copy(self.ball)
