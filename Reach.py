@@ -24,15 +24,15 @@ if state == 'INITIALIZE':
 
 
     # Train model with available samples in the data base.
-    initial_time=time.time()
+    initial_time = time.time()
     t=initial_time
-    while time.time()<5*60*60+initial_time:
+    while time.time() < 1*60*60+initial_time:
         simulator.generateRandomSamples(db.size, db)
         emulator.train(db, state)
-        if time.time()>t+(30*60):
+        if time.time() > t+(30*60):
             emulator.saveModel()
-            t=time.time()
-    state = states[1]
+            t = time.time()
+    #state = states[1]
 
 if state == 'TRAIN':
     # In this state, the algorithm performs both ANN Training alongside LQR Control.
@@ -42,7 +42,7 @@ if state == 'TRAIN':
     start = time.time()
     t1 = start
     t2 = start
-    while True: #time.time() < 10 * 60 * 60 + start:
+    while True:  # time.time() < 10 * 60 * 60 + start:
         if db.numOfElements == db.size:
             emulator.train(db, state)
 
@@ -54,8 +54,11 @@ if state == 'TRAIN':
         uk = controller.calculateNextAction(A, B, xTarget)
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
+        simulator.simulate()
+        #print "Action Taken: {}".format(uk)
+        #simulator.printState()
+        print "Distance (X,Y): ({},{})".format(xTarget[4, 0], xTarget[5, 0])
         db.append(xk_uk, xk_1)
-
         if time.time() > t1 + (10 * 60):
             simulator.reset()
             t1 = time.time()

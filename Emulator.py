@@ -6,7 +6,7 @@ import time
 username = getpass.getuser()
 modelDir = '/home/' + username + '/PycharmProjects/Reacher/network/'
 modelPath = '/home/' + username + '/PycharmProjects/Reacher/network/emulator'
-modelPathTimed = '/home/' + username + '/PycharmProjects/Reacher/network/emulatorrandom10.4-13:42'
+modelPathTimed = '/home/' + username + '/PycharmProjects/Reacher/network/emulatorrandom_17.4_12-46'
 
 
 class Emulator:
@@ -21,7 +21,7 @@ class Emulator:
         self.outputDim = 8
 
         # Learning algorithm parameters
-        self.batch = 100  # batch size
+        self.batch = 200  # batch size
         self.epochs = 50  # number of epochs
         self.rate = 0.01  # learning rate
 
@@ -78,7 +78,6 @@ class Emulator:
     def train(self, db, state):
         if state == 'TRAIN' and (self.restored is False):
             self.restoreModel()
-            self.restored = True
 
         trainIn, trainOut = db.getAll()
         for epoch in range(self.epochs):
@@ -94,20 +93,19 @@ class Emulator:
         xk_uk_in = np.hstack((xk_, uk_))
         if self.restored is False:
             self.restoreModel()
-            self.restored = True
 
         xOut_ = self.sess.run(self.xOut, feed_dict={self.xuIn: xk_uk_in})
         xOut = np.reshape(np.copy(xOut_), (8, 1))
         return xOut
 
     def saveModel(self, property="random"):
-        #TODO: add timestamp
         d = time.gmtime()
         time_stamp = "_" + str(d[2]) + "." + str(d[1]) + "_" + str(d[3] + 2) + "-" + str(d[4])
         self.saver.save(self.sess, modelPath+property+time_stamp)
-        print "Model was saved in the following path: " + modelPath
+        print "Model was saved in the following path: " + modelPath + property + time_stamp
 
     def restoreModel(self):
         self.saver = tf.train.import_meta_graph(modelPathTimed + '.meta')
         self.saver.restore(self.sess, tf.train.latest_checkpoint(modelDir))
-print "Model was restored from the following path: " + modelPathTimed
+        print "Model was restored from the following path: " + modelPathTimed
+        self.restored = True

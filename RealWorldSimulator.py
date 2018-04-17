@@ -61,27 +61,27 @@ class RealWorldSimulator:
         self.uk = uk
         self.observation, reward, done, info = self.env.step(self.uk)
         self.deriveXnFromObservation()
-        self.env.render()
+        #self.env.render()
         return self.getXk()
 
     # Resets the simulator state (in case of exception)
     def reset(self): #TODO: Check return value dimensions
         self.observation = self.env.reset()  # reset the system to a new state
         self.deriveXnFromObservation()
-        self.env.render()
+        #self.env.render()
 
     # Derives the state parameters that are relevant to our program from the current observation tensor.
     def deriveXnFromObservation(self):
-        self.xk[0] = np.copy(self.observation[0])  # cos(Theta) of inner arm
-        self.xk[1] = np.copy(self.observation[1])  # cos(Theta) of outer arm
-        self.xk[2] = np.copy(self.observation[2])  # sin(Theta) of inner arm
-        self.xk[3] = np.copy(self.observation[3])  # sin(Theta) of outer arm
-        self.xk[4] = np.copy(self.observation[4])  # fingertip location x
-        self.xk[5] = np.copy(self.observation[5])  # fingertip location y
-        self.xk[6] = np.copy(self.observation[6])  # v1 (Angular Velocity of lower arm)
-        self.xk[7] = np.copy(self.observation[7])  # v2 (Angular Velocity of upper arm)
-        self.ball[0] = np.copy(self.observation[8])  # ball location x
-        self.ball[1] = np.copy(self.observation[9])  # ball location y
+        self.xk[0] = np.copy(self.observation[0])      # cos(Theta) of inner arm
+        self.xk[1] = np.copy(self.observation[1])      # cos(Theta) of outer arm
+        self.xk[2] = np.copy(self.observation[2])      # sin(Theta) of inner arm
+        self.xk[3] = np.copy(self.observation[3])      # sin(Theta) of outer arm
+        self.xk[4] = np.copy(self.observation[4])      # fingertip location x
+        self.xk[5] = np.copy(self.observation[5])      # fingertip location y
+        self.xk[6] = np.copy(self.observation[6])/180  # v1 (Angular Velocity of inner arm)
+        self.xk[7] = np.copy(self.observation[7])/180  # v2 (Angular Velocity of outer arm)
+        self.ball[0] = np.copy(self.observation[8])    # ball location x
+        self.ball[1] = np.copy(self.observation[9])    # ball location y
         # TODO: do a sanity check that for a certain observation, the values make sense
 
     def getXk(self):
@@ -92,3 +92,14 @@ class RealWorldSimulator:
 
     def getBall(self):
         return np.copy(self.ball)
+
+    def simulate(self):
+        self.env.render()
+
+    def printState(self):
+        print "Ball    (X,Y) : ({},{})".format(self.ball[0], self.ball[1])
+        print "Reacher (X,Y) : ({},{})".format(self.xk[4], self.xk[5])
+        print "Velocity 1: {}".format(self.xk[6])
+        print "Velocity 2: {}".format(self.xk[7])
+
+
