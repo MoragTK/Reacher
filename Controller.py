@@ -14,7 +14,7 @@ class Controller:
         self.R = np.identity(ukDim)*0.1
         self.Q = self.setQ()
         self.numOfLQRSteps = 10
-        self.threshold = 1e-2
+        self.threshold = 1e-3
         self.model = model
 
     # Calculate next step using the iLQR algorithm
@@ -31,7 +31,7 @@ class Controller:
         minCost = 1e+100
         simNewTrajectory = True
         i = 0
-        while i < 150:
+        while i < 100:
 
             if simNewTrajectory is True:
                 Fk, Pk = self.lqrFhd(arrayA, arrayB)
@@ -47,7 +47,7 @@ class Controller:
 
             cost = self.calculateCost(X, U)
             #print "Cost: {}".format(cost)  # TODO: Delete
-            print "Cost: {}".format(cost)
+            #print "Cost: {}".format(cost)
             if cost < prevCost:
                 if cost < minCost:
                     Fk_x0 = np.matmul(Fk[0], x0)
@@ -112,7 +112,8 @@ class Controller:
     def calculateCost(self, X, U):
         cost = 0
         for i in range(self.numOfLQRSteps-1):
-            cost += xMx(x=X[i], M=self.Q) + xMx(x=U[i], M=self.R)
+            cost += xMx(x=U[i], M=self.R)
+        #Final cost
         cost += xMx(x=X[i], M=self.Q)
         return cost
 
@@ -124,10 +125,10 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 15  # distance between ball and fingertip - X axis
-        Q[5, 5] = 15  # distance between ball and fingertip - Y axis
-        Q[6, 6] = 10  # velocity of inner arm
-        Q[7, 7] = 7   # velocity of outer arm
+        Q[4, 4] = 0.5  # distance between ball and fingertip - X axis
+        Q[5, 5] = 0.5  # distance between ball and fingertip - Y axis
+        Q[6, 6] = 0.3  # velocity of inner arm
+        Q[7, 7] = 0.3   # velocity of outer arm
 
         return Q
 

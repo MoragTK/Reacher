@@ -42,7 +42,7 @@ if state == 'TRAIN':
     start = time.time()
     t1 = start
     t2 = start
-    while True:  # time.time() < 10 * 60 * 60 + start:
+    while True:
         if db.numOfElements == db.size:
             emulator.train(db, state)
 
@@ -55,11 +55,9 @@ if state == 'TRAIN':
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
         simulator.simulate()
-        #print "Action Taken: {}".format(uk)
-        #simulator.printState()
         print "Distance (X,Y): ({},{})".format(xTarget[4, 0], xTarget[5, 0])
         db.append(xk_uk, xk_1)
-        if time.time() > t1 + (10 * 60):
+        if time.time() > t1 + (60 * 60):
             simulator.reset()
             t1 = time.time()
 
