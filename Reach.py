@@ -55,6 +55,7 @@ if state == 'TRAIN':
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
         simulator.simulate()
+        print "Action Taken: {}".format(uk)
         print "Distance (X,Y): ({},{})".format(xTarget[4, 0], xTarget[5, 0])
         db.append(xk_uk, xk_1)
         if time.time() > t1 + (60 * 60):

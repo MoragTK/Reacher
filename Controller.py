@@ -11,7 +11,7 @@ ukDim = 2
 class Controller:
 
     def __init__(self, model):
-        self.R = np.identity(ukDim)*0.1
+        self.R = np.identity(ukDim)
         self.Q = self.setQ()
         self.numOfLQRSteps = 10
         self.threshold = 1e-3
@@ -34,7 +34,7 @@ class Controller:
         while i < 100:
 
             if simNewTrajectory is True:
-                Fk, Pk = self.lqrFhd(arrayA, arrayB)
+                Fk = self.lqrFhd(arrayA, arrayB)
             else:
                 Fk = Fk*0.7  # TODO: Not Correct
 
@@ -84,8 +84,8 @@ class Controller:
             F = np.matmul(inv(Bt_Pk_B + self.R), Bt_Pk_A)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
             Fk.insert(0, F)
         Fk = np.asarray(Fk)
-        Pk = np.asarray(Pk)
-        return Fk, Pk
+        #Pk = np.asarray(Pk)
+        return Fk
 
     def calculateTrajectories(self, Fk, x0):
         U = []
@@ -125,10 +125,10 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 0.5  # distance between ball and fingertip - X axis
-        Q[5, 5] = 0.5  # distance between ball and fingertip - Y axis
-        Q[6, 6] = 0.3  # velocity of inner arm
-        Q[7, 7] = 0.3   # velocity of outer arm
+        Q[4, 4] = 100  # distance between ball and fingertip - X axis
+        Q[5, 5] = 100  # distance between ball and fingertip - Y axis
+        Q[6, 6] = 1000  # velocity of inner arm
+        Q[7, 7] = 1000   # velocity of outer arm
 
         return Q
 
