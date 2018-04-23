@@ -15,7 +15,7 @@ state = states[1]
 db = DataSet(size=1000)               # Initializing an empty data base
 simulator = RealWorldSimulator()    # Initialize the RealWorldSimulator
 emulator = Emulator()               # Initialize emulator
-controller = Controller(emulator)   # Initialize Controller
+controller = Controller(emulator, simulator)   # Initialize Controller
 
 
 if state == 'INITIALIZE':
@@ -32,7 +32,7 @@ if state == 'INITIALIZE':
         if time.time() > t+(30*60):
             emulator.saveModel()
             t = time.time()
-    #state = states[1]
+    state = states[1]
 
 if state == 'TRAIN':
     # In this state, the algorithm performs both ANN Training alongside LQR Control.
@@ -45,18 +45,15 @@ if state == 'TRAIN':
     while True:
         if db.numOfElements == db.size:
             emulator.train(db, state)
+        xk = simulator.getXk()
+        uk = controller.calculateNextAction(xk)
+        uk = np.reshape(uk, (2, 1))
 
-        A, B = deriveAB(simulator.getXk(), simulator.getUk(), emulator)
-        xTarget = simulator.getXk()
-        ball = simulator.getBall()
-        xTarget[4, 0] = abs(xTarget[4, 0] - ball[0])
-        xTarget[5, 0] = abs(xTarget[5, 0] - ball[1])
-        uk = controller.calculateNextAction(A, B, xTarget)
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
         simulator.simulate()
-        print "Action Taken: {}".format(uk)
-        print "Distance (X,Y): ({},{})".format(xTarget[4, 0], xTarget[5, 0])
+        #print "Action Taken: {}".format(uk)
+        #print "Distance (X,Y): ({},{})".format(xTarget[4, 0], xTarget[5, 0])
         db.append(xk_uk, xk_1)
         if time.time() > t1 + (60 * 60):
             simulator.reset()
