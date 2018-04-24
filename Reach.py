@@ -58,7 +58,7 @@ if state == 'TRAIN':
 
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
-        simulator.simulate()
+        #simulator.simulate()
         db.append(xk_uk, xk_1)
         if time.time() > t1 + (20 * 60):
             simulator.reset()

@@ -112,16 +112,19 @@ def LqrFhD(A,B,Q,R,N=10):
 
 
 
-def plot_curve(X,ball,cost):
+def plot_curve(X, ball, cost, step):
     from numpy import *
     import matplotlib.pyplot as plt
     import time
     #if plt.get_fignums():
     #    plt.close('route')
-    plt.ion()
     x=X[:,4]
     y=X[:,5]
+    fig=plt.figure()
     plt.plot(x,y)
+    plt.title("Step: {}".format(step))
+    plt.xlim([-0.25, 0.25])
+    plt.ylim([-0.25, 0.25])
     plt.plot(ball[0],ball[1],'go')
     plt.text(ball[0],ball[1],'ball')
     plt.plot(X[0,4],X[0,5],'ro')
@@ -130,6 +133,6 @@ def plot_curve(X,ball,cost):
     plt.text(X[-1, 4], X[-1, 5], 'End')
     plt.text(X[-1, 4], X[-1, 5]+0.02, str(cost))
     plt.show(block=False)
-    plt.pause(1)
-    plt.close()
+    plt.pause(5)
+    plt.close(fig)
 

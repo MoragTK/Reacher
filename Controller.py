@@ -14,7 +14,7 @@ class Controller:
         self.uDim = 2
         self.R = np.identity(self.uDim)*1e-4
         self.Q = self.setQ()
-        self.numOfSteps = 30
+        self.numOfSteps = 15
         self.t = 0
         self.threshold = 1e-5
         self.model = model
@@ -36,7 +36,8 @@ class Controller:
             self.reset()
         U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
         self.X, self.U[self.t:], cost = self.ilqr(x0, U)
-        #plot_curve(self.X,self.simulator.getBall(),cost)
+        #print 'cost: ' +str(cost)
+        plot_curve(self.X,self.simulator.getBall(),cost, self.t)
         nextAction = self.U[self.t]
 
         # move us a step forward in our control sequence
@@ -215,7 +216,8 @@ class Controller:
         for t in range(tN - 1):
             X[t + 1] = self.plant_dynamics(X[t], U[t])
             l, _, _, _, _, _ = self.immediateCost(X[t], U[t])
-            cost = cost + dt * l
+            cost = cost + dt * l # todo this is origin
+            #cost = cost +  l
         # Adjust for final cost, subsample trajectory
         l_f, _, _ = self.finalCost(X[-1])
         cost = cost + l_f
@@ -268,7 +270,6 @@ class Controller:
 
     def immediateCost(self, x, u):
         """ the immediate state cost function """
-        '''
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         xTarget = np.copy(x_)
@@ -294,7 +295,7 @@ class Controller:
         l_xx=np.zeros((8,8))
         l=0
         l_ux = np.zeros((self.uDim, self.xDim))
-
+        '''
         return l, l_x, l_xx, l_u, l_uu, l_ux
 
     def finalCost(self, x):
