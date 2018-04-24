@@ -99,7 +99,7 @@ class RealWorldSimulator:
     def printState(self):
         print "Ball    (X,Y) : ({},{})".format(self.ball[0], self.ball[1])
         print "Reacher (X,Y) : ({},{})".format(self.xk[4], self.xk[5])
-        print "Velocity 1: {}".format(self.xk[6])
-        print "Velocity 2: {}".format(self.xk[7])
+       # print "Velocity 1: {}".format(self.xk[6])
+       # print "Velocity 2: {}".format(self.xk[7])
 
 
