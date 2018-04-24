@@ -7,6 +7,7 @@ import time
 import getpass
 import glob
 import os
+
 username = getpass.getuser()
 modelDir = '/home/' + username + '/PycharmProjects/Reacher/Networks/'
 list_of_files = glob.glob(modelDir + "*")  # * means all if need specific format then *.csv
@@ -18,7 +19,7 @@ states = ('INITIALIZE', 'TRAIN', 'RUN')
 state = states[1]
 
 # Algorithm main building blocks
-db = DataSet(size=800)               # Initializing an empty data base
+db = DataSet(size=300)               # Initializing an empty data base
 simulator = RealWorldSimulator()    # Initialize the RealWorldSimulator
 emulator = Emulator(new=False,filePath=latest_file)               # Initialize emulator
 controller = Controller(emulator, simulator)   # Initialize Controller
@@ -47,17 +48,17 @@ if state == 'TRAIN':
     t1 = start
     t2 = start
     while True:
-        if db.numOfElements == db.size:
-            emulator.train(db, state)
+        #if db.numOfElements == db.size:
+            #emulator.train(db, state)
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
+        #uk=simulator.env.action_space.sample() #todo deleate it
+        #print uk
         uk = np.reshape(uk, (2, 1))
 
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
         simulator.simulate()
-        simulator.printState()
-        #print "Action Taken: {}".format(uk.squeeze())
         db.append(xk_uk, xk_1)
         if time.time() > t1 + (20 * 60):
             simulator.reset()

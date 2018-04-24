@@ -2,7 +2,7 @@ import scipy
 import numpy as np
 from numpy.linalg import inv
 from scipy.linalg import solve_discrete_are
-from Auxilary import deriveAB, xMx, solveRiccati
+from Auxilary import plot_curve, xMx, solveRiccati
 
 
 
@@ -12,14 +12,14 @@ class Controller:
     def __init__(self, model, simulator):
         self.xDim = 8
         self.uDim = 2
-        self.R = np.identity(self.uDim)*1e-2
+        self.R = np.identity(self.uDim)*1e-4
         self.Q = self.setQ()
-        self.numOfSteps = 100
+        self.numOfSteps = 30
         self.t = 0
-        self.threshold = 1e-3
+        self.threshold = 1e-5
         self.model = model
         self.dt = 1e-3 #TODO: Look at size of dt
-        self.maxIter = 100
+        self.maxIter = 10000
         self.lambMax = 1000
         self.lambFactor = 10
         self.simulator = simulator
@@ -29,18 +29,14 @@ class Controller:
 
     # Calculate next step using the iLQR algorithm
     def calculateNextAction(self, x0):
-        print "We are at step {} out of 40".format(self.t)
         if self.ball[0] != self.simulator.getBall()[0] or self.ball[1] != self.simulator.getBall()[1]:
             self.reset()
 
         if self.t >= self.numOfSteps - 1:
-            self.t = 0
-        # Compute the optimization
-        if self.t % 1 == 0:
-            U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
-            #print "U = {}".format(self.U)
-            self.X, self.U[self.t:], cost = self.ilqr(x0, U)
-
+            self.reset()
+        U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
+        self.X, self.U[self.t:], cost = self.ilqr(x0, U)
+        #plot_curve(self.X,self.simulator.getBall(),cost)
         nextAction = self.U[self.t]
 
         # move us a step forward in our control sequence
@@ -100,7 +96,6 @@ class Controller:
                     l_u[t] *= dt
                     l_uu[t] *= dt
                     l_ux[t] *= dt
-                # aaaand for final state
                 l[-1], l_x[-1], l_xx[-1] = self.finalCost(X[-1])
 
                 sim_new_trajectory = False
@@ -187,7 +182,7 @@ class Controller:
                 # check to see if update is small enough to exit
                 if ii > 0 and ((abs(oldCost - cost) / cost) < self.threshold):
                     #print("Converged at iteration = %d; Cost = %.4f;" % (ii, newCost) +
-                     #     " logLambda = %.1f" % np.log(lamb))
+                    #      " logLambda = %.1f" % np.log(lamb))
                     break
 
             else:
@@ -221,7 +216,6 @@ class Controller:
             X[t + 1] = self.plant_dynamics(X[t], U[t])
             l, _, _, _, _, _ = self.immediateCost(X[t], U[t])
             cost = cost + dt * l
-
         # Adjust for final cost, subsample trajectory
         l_f, _, _ = self.finalCost(X[-1])
         cost = cost + l_f
@@ -265,35 +259,16 @@ class Controller:
             x np.array: the state of the system
             u np.array: the control signal
             """
-
-            x_ = np.reshape(np.copy(x), (1, self.xDim))
-            u_ = np.reshape(np.copy(u), (1, self.uDim))
-            xNext = self.model.predict(x_,u_)
+            xNext = self.model.predict(x,u)
             # calculate the change in state
             #xdot = ((xNext - x) / self.arm.dt).squeeze()
 
             return xNext.squeeze()
-    '''
-    def immediateCost(self, u):
-            """ the immediate state cost function """
-            u_ = np.reshape(np.copy(u), (self.uDim, 1))
 
-            # compute cost
-            l = xMx(u_, self.R)
-
-            # compute derivatives of cost
-            l_x = np.zeros(self.xDim)
-            l_xx = np.zeros((self.xDim, self.xDim))
-            l_u = (2 * np.matmul(u_.T, self.R)).squeeze()
-            l_uu = 2 * self.R
-            l_ux = np.zeros((self.uDim, self.xDim))
-
-            # returned in an array for easy multiplication by time step
-
-            return l, l_x, l_xx, l_u, l_uu, l_ux '''
 
     def immediateCost(self, x, u):
         """ the immediate state cost function """
+        '''
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         xTarget = np.copy(x_)
@@ -310,6 +285,15 @@ class Controller:
         l_ux = np.zeros((self.uDim, self.xDim))
 
         # returned in an array for easy multiplication by time step
+        '''
+        u_=np.reshape(np.copy(np.copy(u)), (2,1))
+        l_u=xMx(u_,self.R).squeeze()
+        l_uu=2*self.R
+
+        l_x=np.zeros((8,1)).squeeze()
+        l_xx=np.zeros((8,8))
+        l=0
+        l_ux = np.zeros((self.uDim, self.xDim))
 
         return l, l_x, l_xx, l_u, l_uu, l_ux
 
@@ -345,10 +329,10 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 100   # distance between ball and fingertip - X axis
-        Q[5, 5] = 100   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 50   # velocity of inner arm
-        Q[7, 7] = 50   # velocity of outer arm
+        Q[4, 4] = 1e6   # distance between ball and fingertip - X axis
+        Q[5, 5] = 1e6   # distance between ball and fingertip - Y axis
+        Q[6, 6] = 1e2   # velocity of inner arm
+        Q[7, 7] = 1e2   # velocity of outer arm
 
         return Q
 

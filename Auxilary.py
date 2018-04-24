@@ -3,7 +3,6 @@ from numpy.linalg import inv
 from sklearn.metrics import mean_squared_error
 import scipy.linalg
 
-
 #CalculateAB
 # Receives the model, the input vector and delta
 # Returns the state space matrices A and B.
@@ -76,18 +75,6 @@ def getError(A, B, model, uk, xnu, xreal):
 
 
 '''
-# set Q function
-def setQ(Q):
-        Q[0, 0] = 0  # cos(theta) of outer arm
-        Q[1, 1] = 0  # cos(theta) of inner arm
-        Q[2, 2] = 1  # sin(theta) of outer arm
-        Q[3, 3] = 1  # sin(theta) of inner arm
-        Q[4, 4] = 1  # velocity of outer arm
-        Q[5, 5] = 1  # velocity of outer arm
-        Q[6, 6] = 1  # fingertip location x
-        Q[7, 7] = 1  # fingertip location y
-
-        return Q
 
 def LqrFhD(A,B,Q,R,N=10):
     PN=Q
@@ -117,75 +104,32 @@ def LqrFhD(A,B,Q,R,N=10):
     F=np.matmul(c3,c5) # inv(Bt*Pk*B+R)*(Bt*Pk*A)
     return F
 
-def LqrFhD2(A,B,Q,R,N=10):
-    PN=Q
-    Bt=np.transpose(B)
-    for i in range(0,N-1):
-        PN=scipy.linalg.solve_discrete_are(A,B,PN,R)
-
-    c1 = np.matmul(Bt, PN)
-    c2 = np.matmul(c1, B) + R  # Bt*Pk*B+R
-    c3=inv(c2)
-    c4 = np.matmul(Bt, PN)
-    c5 = np.matmul(c4, A)  # Bt*Pk*A
-    F = np.matmul(c3, c5)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
-    return F
-
-
-def lqrFhD(A,B,Q,R,N=10):
-
-    Pk = Q
-
-    for i in range(0, N-1):
-        temp = scipy.linalg.solve_discrete_are(A, B, Pk, R)
-        Pk = np.copy(temp)
-        print "calculating p"+i+"\n"
-
-    Bt = np.transpose(B)
-    Bt_Pk = np.matmul(Bt, Pk)
-    Bt_Pk_B = np.matmul(Bt_Pk, B)
-    Bt_Pk_A = np.matmul(Bt_Pk, A)
-    F = np.matmul(inv(Bt_Pk_B+R), Bt_Pk_A)  # inv(Bt*Pk*B+R)*(Bt*Pk*A)
-
-    return F
-
-'''
 
 
 
 
 '''
-def getAll(Q,size):
-    out = np.copy(Q.pop())
-    Q.appendleft(np.copy(out))
-    input = np.copy(out[:, :8])
-    target = np.copy(out[:, 8:])
-    for i in range(0,size-1):
-        out = np.copy(Q.pop())
-        Q.appendleft(np.copy(out))
-        inp = np.copy(out[:, :8])
-        tar = np.copy(out[:, 8:])
-        input = np.vstack((input, inp))
-        target = np.vstack((target, tar))
-    return [input,target]
-'''
 
-def scanUopt(model,xu,ball):
-    u1=-0.002
-    MSE=1000
-    ud=np.matrix([[0.,0.]])
-    for i in range(0,3):
-        u2=-0.002
-        u1=u1+0.001
-        for j in range(0,3):
-            u2=u2+0.001
-            u=np.copy(np.matrix([[u1,u2]]))
-            xnu=np.hstack((xu,u))
-            xn1=np.matrix(model.predict(xnu))
-            xy=xn1[0,4:]
-            mse=mean_squared_error(xy,ball)
-            if mse<MSE:
-                MSE=mse
-                ud=u
-    return ud
+
+
+def plot_curve(X,ball,cost):
+    from numpy import *
+    import matplotlib.pyplot as plt
+    import time
+    #if plt.get_fignums():
+    #    plt.close('route')
+    plt.ion()
+    x=X[:,4]
+    y=X[:,5]
+    plt.plot(x,y)
+    plt.plot(ball[0],ball[1],'go')
+    plt.text(ball[0],ball[1],'ball')
+    plt.plot(X[0,4],X[0,5],'ro')
+    plt.text(X[0,4],X[0,5],'start')
+    plt.plot(X[-1, 4], X[-1, 5], 'ro')
+    plt.text(X[-1, 4], X[-1, 5], 'End')
+    plt.text(X[-1, 4], X[-1, 5]+0.02, str(cost))
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
