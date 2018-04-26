@@ -36,7 +36,7 @@ class Controller:
             self.reset()
         U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
         self.X, self.U[self.t:], cost = self.ilqr(x0, U)
-        plot_curve(self.X,self.simulator.getBall(),cost, self.t)
+        #plot_curve(self.X,self.simulator.getBall(),cost, self.t)
         nextAction = self.U[self.t]
 
         # move us a step forward in our control sequence
@@ -195,6 +195,10 @@ class Controller:
                 # calculated from our value function approximation
                 # to take a stab at the optimal control signal
                 Unew[t] = U[t] + k[t] + np.dot(K[t], xnew - X[t])  # 7b)
+                ## todo check if help!!
+                Unew[t]=np.divide(Unew[t],100)
+                Unew[t]=min(max(Unew[t][0],-1),1)
+                Unew[t] = min(max(Unew[t][1], -1), 1)
                 # given this u, find our next state
                 xnew = self.plant_dynamics(xnew, Unew[t])  # 7c)
 
@@ -325,8 +329,8 @@ class Controller:
         Q[3, 3] = 0   # sin(theta) of inner arm
         Q[4, 4] = 1e6   # distance between ball and fingertip - X axis
         Q[5, 5] = 1e6   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 1e4   # velocity of inner arm
-        Q[7, 7] = 1e4   # velocity of outer arm
+        Q[6, 6] = 5e5   # velocity of inner arm
+        Q[7, 7] = 5e5   # velocity of outer arm
 
         return Q
 

@@ -114,10 +114,9 @@ def LqrFhD(A,B,Q,R,N=10):
 
 def plot_curve(X, ball, cost=None, step=0,t=2):
     from numpy import *
+    import matplotlib
+    matplotlib.use('qt4agg')
     import matplotlib.pyplot as plt
-    import time
-    #if plt.get_fignums():
-    #    plt.close('route')
     x=X[:,4]
     y=X[:,5]
     fig=plt.figure()
@@ -138,4 +137,22 @@ def plot_curve(X, ball, cost=None, step=0,t=2):
     #print(X[0,4],X[0,5])
     plt.pause(2)
     plt.close(fig)
+
+def plot_next_pos(xk1_pred,xk1_real):
+    xk1_real_=np.reshape(np.copy(xk1_real), (1,8))
+    #from numpy import *
+    import matplotlib
+    matplotlib.use('qt4agg')
+    import matplotlib.pyplot as plt
+    plt.ion()
+    plt.xlim([-0.25, 0.25])
+    plt.ylim([-0.25, 0.25])
+    plt.plot(xk1_pred[0,4],xk1_pred[0,5],'ro')
+    plt.text(xk1_pred[0,4],xk1_pred[0,5],'xk_pred')
+    plt.plot(xk1_real_[0, 4], xk1_real_[0, 5], 'ro')
+    plt.text(xk1_real_[0, 4]+0.02, xk1_real_[0, 5]+0.02, 'xk1_real')
+    plt.show(block=False)
+    plt.pause(4)
+    plt.clf()
+    #plt.close(fig)
 
