@@ -49,7 +49,7 @@ class RealWorldSimulator:
     # Generates random samples for the initial data set.
     def generateRandomSamples(self, numOfSamples, dataBase):
         for i in range(numOfSamples):
-            self.env.render()
+            #self.env.render()
             self.uk = self.env.action_space.sample()                        # Create a random action uk
             xk_uk_input = np.vstack((self.getXk(), self.getUk()))                     # The input vector for the neural network
             self.observation, reward, done, info = self.env.step(self.uk)   # Perform the random action uk
