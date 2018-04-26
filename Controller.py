@@ -14,9 +14,9 @@ class Controller:
         self.uDim = 2
         self.R = np.identity(self.uDim)*1e-4
         self.Q = self.setQ()
-        self.numOfSteps = 15
+        self.numOfSteps = 20
         self.t = 0
-        self.threshold = 1e-5
+        self.threshold = 1e-3
         self.model = model
         self.dt = 1e-3 #TODO: Look at size of dt
         self.maxIter = 10000
@@ -36,7 +36,6 @@ class Controller:
             self.reset()
         U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
         self.X, self.U[self.t:], cost = self.ilqr(x0, U)
-        #print 'cost: ' +str(cost)
         plot_curve(self.X,self.simulator.getBall(),cost, self.t)
         nextAction = self.U[self.t]
 
@@ -45,6 +44,41 @@ class Controller:
         return nextAction
 
     # TODO: Document
+    def immediateCost(self, x, u):
+        """ the immediate state cost function """
+        u_ = np.reshape(np.copy(u), (self.uDim, 1))
+        x_ = np.reshape(np.copy(x), (self.xDim, 1))
+        xTarget = np.copy(x_)
+        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
+        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        # compute cost
+        l = 0.5*xMx(u_, self.R) #+ xMx(xTarget, self.Q)
+        # compute derivatives of cost
+        l_x = np.zeros(self.xDim).squeeze()#(2 * np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
+        l_xx = np.zeros((self.xDim,self.xDim))
+        l_u = ( np.matmul(u_.T, self.R)).squeeze()
+        l_uu =  self.R
+        l_ux = np.zeros((self.uDim, self.xDim))
+
+
+        return l, l_x, l_xx, l_u, l_uu, l_ux
+    def finalCost(self, x):
+        """ the final state cost function """
+        x_ = np.reshape(np.copy(x), (self.xDim, 1))
+        xTarget = np.copy(x_)
+        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
+        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        #print "Ball in final cost:  (X,Y) : ({},{})".format(self.simulator.getBall()[0],self.simulator.getBall()[1])
+        #print "Reacher in final cost: (X,Y) : ({},{})".format(x_[4, 0], x_[5, 0])
+        #print "Distance: ({},{})".format(xTarget[4],xTarget[5])
+        l =  0.5*xMx(xTarget, self.Q)
+        l_x = (  np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
+        l_xx =   self.Q
+
+        # Final cost only requires these three values
+        return l, l_x, l_xx
+
+
     def ilqr(self, x0, U=None):
         """ use iterative linear quadratic regulation to find a control
         sequence that minimizes the cost function
@@ -56,7 +90,7 @@ class Controller:
         tN = U.shape[0]  # number of time steps
         dt = self.dt  # time step
 
-        lamb = 1.0  # regularization parameter
+        lamb = 0.01  # regularization parameter  todo u chage it
         sim_new_trajectory = True
 
         for ii in range(self.maxIter):
@@ -64,6 +98,7 @@ class Controller:
             if sim_new_trajectory == True:
                 # simulate forward using the current control trajectory
                 X, cost = self.calculateTrajectory(x0, U)
+                #plot_curve(X,self.simulator.getBall(),cost,self.t)
                 oldCost = np.copy(cost)  # copy for exit condition check
 
                 # now we linearly approximate the dynamics, and quadratically
@@ -268,55 +303,13 @@ class Controller:
             return xNext.squeeze()
 
 
-    def immediateCost(self, x, u):
-        """ the immediate state cost function """
-        u_ = np.reshape(np.copy(u), (self.uDim, 1))
-        x_ = np.reshape(np.copy(x), (self.xDim, 1))
-        xTarget = np.copy(x_)
-        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
-        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
-        # compute cost
-        l = xMx(u_, self.R) + xMx(xTarget, self.Q)
-        #print "uRu = {}, xQx = {}".format(xMx(u_, self.R), xMx(xTarget, self.Q))
-        # compute derivatives of cost
-        l_x = (2 * np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
-        l_xx = 2 * self.Q
-        l_u = (2 * np.matmul(u_.T, self.R)).squeeze()
-        l_uu = 2 * self.R
-        l_ux = np.zeros((self.uDim, self.xDim))
 
-        # returned in an array for easy multiplication by time step
-        '''
-        u_=np.reshape(np.copy(np.copy(u)), (2,1))
-        l_u=xMx(u_,self.R).squeeze()
-        l_uu=2*self.R
 
-        l_x=np.zeros((8,1)).squeeze()
-        l_xx=np.zeros((8,8))
-        l=0
-        l_ux = np.zeros((self.uDim, self.xDim))
-        '''
-        return l, l_x, l_xx, l_u, l_uu, l_ux
 
-    def finalCost(self, x):
-        """ the final state cost function """
-        x_ = np.reshape(np.copy(x), (self.xDim, 1))
-        xTarget = np.copy(x_)
-        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
-        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
-        #print "Ball in final cost:  (X,Y) : ({},{})".format(self.simulator.getBall()[0],self.simulator.getBall()[1])
-        #print "Reacher in final cost: (X,Y) : ({},{})".format(x_[4, 0], x_[5, 0])
-        #print "Distance: ({},{})".format(xTarget[4],xTarget[5])
-        l =  xMx(xTarget, self.Q)
-        l_x = (2 * np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
-        l_xx = 2 * self.Q
-
-        # Final cost only requires these three values
-        return l, l_x, l_xx
 
     def reset(self):
         """ reset the state of the system """
-        print " i just entered reset!"
+        #print " i just entered reset!"
         # Index along current control sequence
         self.t = 0
         self.U = np.zeros((self.numOfSteps, self.uDim))
@@ -332,8 +325,8 @@ class Controller:
         Q[3, 3] = 0   # sin(theta) of inner arm
         Q[4, 4] = 1e6   # distance between ball and fingertip - X axis
         Q[5, 5] = 1e6   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 1e2   # velocity of inner arm
-        Q[7, 7] = 1e2   # velocity of outer arm
+        Q[6, 6] = 1e4   # velocity of inner arm
+        Q[7, 7] = 1e4   # velocity of outer arm
 
         return Q
 

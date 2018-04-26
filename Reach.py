@@ -33,11 +33,11 @@ if state == 'INITIALIZE':
         # Generate random samples for the initial training and insert them to the data set.
         simulator.generateRandomSamples(db.size, db)
         emulator.train(db, state)
-        if time.time() > t + (30 * 60):
+        if time.time() > t + (5 * 60):
             t = time.time()
             d = time.gmtime()
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
-            emulator.saveModel(modelDir + "emulator_100_" + time_stamp)
+            emulator.saveModel(modelDir + "emulator_400_" + time_stamp)
 
             state = states[1]
 
@@ -48,8 +48,8 @@ if state == 'TRAIN':
     t1 = start
     t2 = start
     while True:
-        #if db.numOfElements == db.size:
-            #emulator.train(db, state)
+        if db.numOfElements == db.size:
+            emulator.train(db, state)
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
         #uk=simulator.env.action_space.sample() #todo deleate it
@@ -67,7 +67,7 @@ if state == 'TRAIN':
         if time.time() > t2 + (60 * 60):
             d = time.gmtime()
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
-            emulator.saveModel(modelDir + "emulator_100_" + time_stamp)
+            emulator.saveModel(modelDir + "emulator_400_" + time_stamp)
             t2 = time.time()
 '''
 else state == 'RUN':

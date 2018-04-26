@@ -112,7 +112,7 @@ def LqrFhD(A,B,Q,R,N=10):
 
 
 
-def plot_curve(X, ball, cost, step):
+def plot_curve(X, ball, cost=None, step=0,t=2):
     from numpy import *
     import matplotlib.pyplot as plt
     import time
@@ -129,10 +129,13 @@ def plot_curve(X, ball, cost, step):
     plt.text(ball[0],ball[1],'ball')
     plt.plot(X[0,4],X[0,5],'ro')
     plt.text(X[0,4],X[0,5],'start')
+
     plt.plot(X[-1, 4], X[-1, 5], 'ro')
     plt.text(X[-1, 4], X[-1, 5], 'End')
-    plt.text(X[-1, 4], X[-1, 5]+0.02, str(cost))
+    plt.text(X[-1, 4], X[-1, 5]+0.03, str(cost))
     plt.show(block=False)
-    plt.pause(5)
+    #print "cost: " +str(cost)
+    #print(X[0,4],X[0,5])
+    plt.pause(2)
     plt.close(fig)
 

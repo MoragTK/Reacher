@@ -7,9 +7,10 @@ class Emulator():
     def __init__(self, new=False,filePath=''):
         if new:
             self.model = Sequential()
-            self.model.add(Dense(100, input_dim=10, kernel_initializer='normal', activation='tanh'))
-            self.model.add(Dense(75, input_dim=100, kernel_initializer='normal', activation='tanh'))
-            self.model.add(Dense(50, input_dim=75, kernel_initializer='normal', activation='tanh'))
+            self.model.add(Dense(300, input_dim=10, kernel_initializer='normal', activation='tanh'))
+            self.model.add(Dense(400, input_dim=300, kernel_initializer='normal', activation='tanh'))
+            self.model.add(Dense(300, input_dim=400, kernel_initializer='normal', activation='tanh'))
+            self.model.add(Dense(200, input_dim=300, kernel_initializer='normal', activation='tanh'))
             self.model.add(Dense(8, kernel_initializer='normal'))
             self.optimizer = optimizers.Adamax(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0)
             from keras.utils import plot_model
@@ -25,8 +26,8 @@ class Emulator():
         input, target = db.getAll()
         history = NBatchLogger()
 
-        self.model.fit(input, target, batch_size=100, epochs=100, verbose=0,
-                callbacks=[history], validation_split=0.3)
+        self.model.fit(input, target, batch_size=100, epochs=100, verbose=2,
+                 validation_split=0.3)
         return
 
 
