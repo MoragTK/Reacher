@@ -11,8 +11,10 @@ class Emulator():
             self.model.add(Dense(400, input_dim=300, kernel_initializer='normal', activation='tanh'))
             self.model.add(Dense(300, input_dim=400, kernel_initializer='normal', activation='tanh'))
             self.model.add(Dense(200, input_dim=300, kernel_initializer='normal', activation='tanh'))
+            self.model.add(Dense(100, input_dim=10, kernel_initializer='normal', activation='tanh'))
+            self.model.add(Dense(150, input_dim=100, kernel_initializer='normal', activation='tanh'))
             self.model.add(Dense(8, kernel_initializer='normal'))
-            self.optimizer = optimizers.Adamax(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0)
+            self.optimizer = optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
             from keras.utils import plot_model
             plot_model(self.model, to_file='modelNew6xy.png', show_shapes=True, show_layer_names=True)
             self.compile()
@@ -28,6 +30,9 @@ class Emulator():
 
         self.model.fit(input, target, batch_size=100, epochs=100, verbose=0,
                 callbacks=[history] ,validation_split=0.3)
+        self.model.fit(input, target, batch_size=150, epochs=100, verbose=2,
+                       callbacks=[history],
+                 validation_split=0.3)
         return
 
 
@@ -43,6 +48,13 @@ class Emulator():
     def restoreModel(self, filePath):
         self.model =load_model(filePath)
 
+    def evaluate(self,xk,uk,xk1):
+        xk_ = np.reshape(np.copy(xk), (1, 8))
+        uk_ = np.reshape(np.copy(uk), (1, 2))
+        xuk = np.hstack((xk_, uk_))
+        target=np.reshape(np.copy(xk1), (1, 8))
+        err=self.model.evaluate( x=xuk, y=target, batch_size=100,verbose=0)
+        print err
 
 class NBatchLogger(Callback):
     """

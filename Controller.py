@@ -14,10 +14,10 @@ class Controller:
         self.uDim = 2
         self.R = np.identity(self.uDim)*1e-4
         self.Q = self.setQ()
-        self.Qvel=self.setQvel()
-        self.numOfSteps = 50
+        #self.Qvel=self.setQvel()
+        self.numOfSteps = 12
         self.t = 0
-        self.threshold = 1e-5
+        self.threshold = 1e-3
         self.model = model
         self.dt = 1e-3 #TODO: Look at size of dt
         self.maxIter = 1000
@@ -38,7 +38,7 @@ class Controller:
         U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
         self.X, self.U[self.t:], cost = self.ilqr(x0, U)
         #print 'cost: ' +str(cost)
-        #plot_curve(self.X,self.simulator.getBall(),cost, self.t)
+        plot_curve(self.X,self.simulator.getBall(),cost, self.t)
         nextAction = self.U[self.t]
 
         # move us a step forward in our control sequence
@@ -46,6 +46,40 @@ class Controller:
         return nextAction
 
     # TODO: Document
+    def immediateCost(self, x, u):
+        """ the immediate state cost function """
+        u_ = np.reshape(np.copy(u), (self.uDim, 1))
+        x_ = np.reshape(np.copy(x), (self.xDim, 1))
+        xTarget = np.copy(x_)
+        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
+        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        # compute cost
+        l = 0*0.5*xMx(u_, self.R) #+ xMx(xTarget, self.Q)
+        # compute derivatives of cost
+        l_x = np.zeros(self.xDim).squeeze()#(2 * np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
+        l_xx = np.zeros((self.xDim,self.xDim))
+        l_u = 0*( np.matmul(u_.T, self.R)).squeeze()
+        l_uu = 0*self.R
+        l_ux = np.zeros((self.uDim, self.xDim))
+        return l, l_x, l_xx, l_u, l_uu, l_ux
+
+    def finalCost(self, x):
+        """ the final state cost function """
+        x_ = np.reshape(np.copy(x), (self.xDim, 1))
+        xTarget = np.copy(x_)
+        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
+        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        #print "Ball in final cost:  (X,Y) : ({},{})".format(self.simulator.getBall()[0],self.simulator.getBall()[1])
+        #print "Reacher in final cost: (X,Y) : ({},{})".format(x_[4, 0], x_[5, 0])
+        #print "Distance: ({},{})".format(xTarget[4],xTarget[5])
+        l =  0.5*xMx(xTarget, self.Q)
+        l_x = (  np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
+        l_xx =   self.Q
+
+        # Final cost only requires these three values
+        return l, l_x, l_xx
+
+
     def ilqr(self, x0, U=None):
         """ use iterative linear quadratic regulation to find a control
         sequence that minimizes the cost function
@@ -57,7 +91,7 @@ class Controller:
         tN = U.shape[0]  # number of time steps
         dt = self.dt  # time step
 
-        lamb = 1.0  # regularization parameter
+        lamb = 0.01  # regularization parameter  todo u chage it
         sim_new_trajectory = True
 
         for ii in range(self.maxIter):
@@ -65,6 +99,7 @@ class Controller:
             if sim_new_trajectory == True:
                 # simulate forward using the current control trajectory
                 X, cost = self.calculateTrajectory(x0, U)
+                #plot_curve(X,self.simulator.getBall(),cost,self.t)
                 oldCost = np.copy(cost)  # copy for exit condition check
 
                 # now we linearly approximate the dynamics, and quadratically
@@ -161,6 +196,10 @@ class Controller:
                 # calculated from our value function approximation
                 # to take a stab at the optimal control signal
                 Unew[t] = U[t] + k[t] + np.dot(K[t], xnew - X[t])  # 7b)
+                ## todo check if help!!
+                Unew[t]=np.divide(Unew[t],100)
+                Unew[t]=min(max(Unew[t][0],-1),1)
+                Unew[t] = min(max(Unew[t][1], -1), 1)
                 # given this u, find our next state
                 xnew = self.plant_dynamics(xnew, Unew[t])  # 7c)
 
@@ -277,27 +316,16 @@ class Controller:
         xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
         xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
         # compute cost
-        l = xMx(u_, self.R) + xMx(xTarget, self.Qvel)
+        l = xMx(u_, self.R) #+ xMx(xTarget, self.Qvel)
         #print "uRu = {}, xQx = {}".format(xMx(u_, self.R), xMx(xTarget, self.Q))
         # compute derivatives of cost
-        l_x = (2 * np.matmul(xTarget.T, self.Qvel)).squeeze()  # TODO: Make sure dims are good
-        l_xx = 2 * self.Qvel
+        l_x =np.zeros(self.xDim).squeeze()  # TODO: Make sure dims are good
+        l_xx =0 * self.Q
         l_u = ( np.matmul(u_.T, self.R)).squeeze()
         l_uu =  self.R
         l_ux = np.zeros((self.uDim, self.xDim))
+        return l,l_x,l_xx,l_u,l_uu,l_ux
 
-        # returned in an array for easy multiplication by time step
-        '''
-        u_=np.reshape(np.copy(np.copy(u)), (2,1))
-        l_u=xMx(u_,self.R).squeeze()
-        l_uu=2*self.R
-
-        l_x=np.zeros((8,1)).squeeze()
-        l_xx=np.zeros((8,8))
-        l=0
-        l_ux = np.zeros((self.uDim, self.xDim))
-        '''
-        return l, l_x, l_xx, l_u, l_uu, l_ux
 
     def finalCost(self, x):
         """ the final state cost function """
@@ -331,13 +359,13 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 1e6   # distance between ball and fingertip - X axis
-        Q[5, 5] = 1e6   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 1e2   # velocity of inner arm
-        Q[7, 7] = 1e2   # velocity of outer arm
+        Q[4, 4] = 3e6   # distance between ball and fingertip - X axis
+        Q[5, 5] = 3e6   # distance between ball and fingertip - Y axis
+        Q[6, 6] = 5e5   # velocity of inner arm
+        Q[7, 7] = 5e5   # velocity of outer arm
 
         return Q
-
+    '''
     def setQvel(self):
 
         Q = np.zeros((self.xDim, self.xDim))
@@ -351,3 +379,4 @@ class Controller:
         Q[7, 7] = 1e2  # velocity of outer arm
 
         return Q
+    '''
