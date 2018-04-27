@@ -1,37 +1,10 @@
 import numpy as np
 from numpy.linalg import inv
 from sklearn.metrics import mean_squared_error
-import scipy.linalg
+import getpass
 
-#CalculateAB
-# Receives the model, the input vector and delta
-# Returns the state space matrices A and B.
-#TODO: This function needs to be verified
-def deriveAB(xk_in, uk_in, model, eps=1e-4):
-    xkDim = 8
-    ukDim = 2
-    A = np.ones((xkDim, xkDim))
-    B = np.ones((xkDim, ukDim))
-
-    for i in range(0, xkDim):
-        xk = np.copy(xk_in)
-        xk[i, 0] += eps
-        state_inc = model.predict(xk, uk_in)
-        xk = np.copy(xk_in)
-        xk[i, 0] -= eps
-        state_dec = model.predict(xk, uk_in)
-        A[:, i] = (state_inc[:, 0] - state_dec[:, 0]) / (2 * eps) # TODO: Is this how A should be? or transpose?
-
-    for i in range(0, ukDim):
-        uk = np.copy(uk_in)
-        uk[i, 0] += eps
-        state_inc = model.predict(xk_in, uk)
-        uk = np.copy(uk_in)
-        uk[i, 0] -= eps
-        state_dec = model.predict(xk_in, uk)
-        B[:, i] = (state_inc[:, 0] - state_dec[:, 0]) / (2 * eps)
-
-    return A, B
+username = getpass.getuser()
+figPath = '/home/' + username + '/PycharmProjects/Reacher/Figures/'
 
 
 def xMx(x, M):
@@ -41,6 +14,34 @@ def xMx(x, M):
     return xt_M_x
 
 
+def plotCurve(X, ball, step, uk):
+    from numpy import *
+    import matplotlib
+    matplotlib.use('qt4agg')
+    import matplotlib.pyplot as plt
+    x = X[:, 4]
+    y = X[:, 5]
+    plt.ion()
+    plt.plot(x, y)
+    plt.title("Step: {}".format(step))
+    plt.xlim([-0.25, 0.25])
+    plt.ylim([-0.25, 0.25])
+    plt.plot(ball[0],ball[1],'go')
+    plt.text(ball[0],ball[1],'ball')
+    plt.plot(X[0,4],X[0,5],'ro')
+    plt.text(X[0,4],X[0,5],'start')
+    plt.plot(X[-1, 4], X[-1, 5], 'ro')
+    plt.text(X[-1, 4], X[-1, 5], 'End')
+    plt.figtext(0.15, 0.12, "Uk: {}".format(uk))
+    plt.savefig(figPath + 'step_0' + str(step))
+    #plt.text(X[-1, 4], X[-1, 5]+0.03, str(cost))
+    plt.show(block=False)
+    #print "cost: " +str(cost)
+    #print(X[0,4],X[0,5])
+    plt.pause(2)
+    plt.clf()
+
+'''
 def solveRiccati(A, B, Pk, Q, R):
 
     At = np.transpose(A)
@@ -74,7 +75,7 @@ def getError(A, B, model, uk, xnu, xreal):
     return
 
 
-'''
+
 
 def LqrFhD(A,B,Q,R,N=10):
     PN=Q
@@ -110,33 +111,6 @@ def LqrFhD(A,B,Q,R,N=10):
 
 '''
 
-
-
-def plot_curve(X, ball, cost=None, step=0,t=2):
-    from numpy import *
-    import matplotlib
-    matplotlib.use('qt4agg')
-    import matplotlib.pyplot as plt
-    x=X[:,4]
-    y=X[:,5]
-    plt.ion()
-    plt.plot(x,y)
-    plt.title("Step: {}".format(step))
-    plt.xlim([-0.25, 0.25])
-    plt.ylim([-0.25, 0.25])
-    plt.plot(ball[0],ball[1],'go')
-    plt.text(ball[0],ball[1],'ball')
-    plt.plot(X[0,4],X[0,5],'ro')
-    plt.text(X[0,4],X[0,5],'start')
-
-    plt.plot(X[-1, 4], X[-1, 5], 'ro')
-    plt.text(X[-1, 4], X[-1, 5], 'End')
-    plt.text(X[-1, 4], X[-1, 5]+0.03, str(cost))
-    plt.show(block=False)
-    #print "cost: " +str(cost)
-    #print(X[0,4],X[0,5])
-    plt.pause(2)
-    plt.clf()
 
 def plot_next_pos(xk1_pred,xk1_real):
     xk1_real_=np.reshape(np.copy(xk1_real), (1,8))
