@@ -72,14 +72,14 @@ if state == 'TRAIN':
         ##
         simulator.simulate()
         db.append(xk_uk, xk_1)
-        if time.time() > t1 + ( 1* 60):
+        if time.time() > t1 + ( 2* 60):
             simulator.reset()
             t1 = time.time()
 
         if time.time() > t2 + (60 * 60):
             d = time.gmtime()
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
-            emulator.saveModel(modelDir + "emulator_400_" + time_stamp)
+            emulator.saveModel(modelDir + "emulator_adam_" + time_stamp)
             t2 = time.time()
 '''
 else state == 'RUN':

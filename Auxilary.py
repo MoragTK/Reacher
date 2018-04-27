@@ -119,7 +119,7 @@ def plot_curve(X, ball, cost=None, step=0,t=2):
     import matplotlib.pyplot as plt
     x=X[:,4]
     y=X[:,5]
-    fig=plt.figure()
+    plt.ion()
     plt.plot(x,y)
     plt.title("Step: {}".format(step))
     plt.xlim([-0.25, 0.25])
@@ -136,7 +136,7 @@ def plot_curve(X, ball, cost=None, step=0,t=2):
     #print "cost: " +str(cost)
     #print(X[0,4],X[0,5])
     plt.pause(2)
-    plt.close(fig)
+    plt.clf()
 
 def plot_next_pos(xk1_pred,xk1_real):
     xk1_real_=np.reshape(np.copy(xk1_real), (1,8))

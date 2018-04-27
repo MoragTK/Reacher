@@ -33,10 +33,12 @@ class Controller:
             self.reset()
 
         if self.t >= self.numOfSteps - 1:
-            self.reset()
+            print "Done!!"
+            return np.zeros(2)
+            #self.reset()
         U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
         self.X, self.U[self.t:], cost = self.ilqr(x0, U)
-        #plot_curve(self.X,self.simulator.getBall(),cost, self.t)
+        plot_curve(self.X,self.simulator.getBall(),cost, self.t)
         nextAction = self.U[self.t]
 
         # move us a step forward in our control sequence
@@ -52,16 +54,16 @@ class Controller:
         xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
         xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
         # compute cost
-        l = 0.5*xMx(u_, self.R) #+ xMx(xTarget, self.Q)
+        l = 0.5*xMx(u_, self.R) #+0.5* xMx(xTarget, self.Q)
         # compute derivatives of cost
-        l_x = np.zeros(self.xDim).squeeze()#(2 * np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
-        l_xx = np.zeros((self.xDim,self.xDim))
-        l_u = ( np.matmul(u_.T, self.R)).squeeze()
-        l_uu =  self.R
+        l_x = 0* (  np.matmul(xTarget.T, self.Q)).squeeze()#(2 * np.matmul(xTarget.T, self.Q)).squeeze()  # TODO: Make sure dims are good
+        l_xx = 0*self.Q
+        l_u = (np.matmul(u_.T, self.R)).squeeze()
+        l_uu = self.R
         l_ux = np.zeros((self.uDim, self.xDim))
 
-
         return l, l_x, l_xx, l_u, l_uu, l_ux
+
     def finalCost(self, x):
         """ the final state cost function """
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
@@ -199,6 +201,7 @@ class Controller:
                 Unew[t]=np.divide(Unew[t],100)
                 Unew[t]=min(max(Unew[t][0],-1),1)
                 Unew[t] = min(max(Unew[t][1], -1), 1)
+                ##
                 # given this u, find our next state
                 xnew = self.plant_dynamics(xnew, Unew[t])  # 7c)
 
@@ -258,9 +261,10 @@ class Controller:
             cost = cost + dt * l # todo this is origin
             #cost = cost +  l
         # Adjust for final cost, subsample trajectory
+        print "Cost of actions: {}".format(cost)
         l_f, _, _ = self.finalCost(X[-1])
+        print "final Cost: {}".format(l_f)
         cost = cost + l_f
-
         return X, cost
 
 
@@ -327,10 +331,10 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 1e6   # distance between ball and fingertip - X axis
-        Q[5, 5] = 1e6   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 5e5   # velocity of inner arm
-        Q[7, 7] = 5e5   # velocity of outer arm
+        Q[4, 4] = 1e1   # distance between ball and fingertip - X axis
+        Q[5, 5] = 1e1   # distance between ball and fingertip - Y axis
+        Q[6, 6] = 1e1   # velocity of inner arm
+        Q[7, 7] = 1e1   # velocity of outer arm
 
         return Q
 

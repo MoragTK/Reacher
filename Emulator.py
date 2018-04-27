@@ -11,8 +11,6 @@ class Emulator():
             self.model.add(Dense(150, input_dim=100, kernel_initializer='normal', activation='tanh'))
             self.model.add(Dense(8, kernel_initializer='normal'))
             self.optimizer = optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
-            from keras.utils import plot_model
-            plot_model(self.model, to_file='modelNew6xy.png', show_shapes=True, show_layer_names=True)
             self.compile()
         else:
             self.restoreModel(filePath)
