@@ -57,11 +57,11 @@ if state == 'TRAIN':
     t1 = start
     t2 = start
     while True:
-        if db.numOfElements == db.size:
-           emulator.train(db, state)
+        #if db.numOfElements == db.size:
+         #  emulator.train(db, state)
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
-        #print 'uk: ' +str(uk)
+        print 'uk: ' +str(uk)
         uk = np.reshape(uk, (2, 1))
 
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
@@ -72,7 +72,7 @@ if state == 'TRAIN':
         ##
         simulator.simulate()
         db.append(xk_uk, xk_1)
-        if time.time() > t1 + ( 2* 60):
+        if time.time() > t1 + ( 5* 60):
             simulator.reset()
             t1 = time.time()
 
