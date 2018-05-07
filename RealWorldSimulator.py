@@ -35,9 +35,11 @@ class RealWorldSimulator:
     # Constructor
     def __init__(self):
         # define tensors
-        self.xk = np.zeros(8)    # Current State
-        self.uk = np.zeros(2)    # Current action taken
-        self.ball = np.zeros(2)  # ball location
+        self.uDim = 2
+        self.xDim = 8
+        self.xk = np.zeros(self.xDim)    # Current State
+        self.uk = np.zeros(self.uDim)    # Current action taken
+        self.ball = np.zeros(self.uDim)  # ball location
 
         # Initialize environment
         self.env = gym.make('Reacher-v1')
@@ -85,10 +87,10 @@ class RealWorldSimulator:
         # TODO: do a sanity check that for a certain observation, the values make sense
 
     def getXk(self):
-        return np.reshape(np.copy(self.xk), (8, 1))
+        return np.reshape(np.copy(self.xk), (self.xDim, 1))
 
     def getUk(self):
-        return np.reshape(np.copy(self.uk), (2, 1))
+        return np.reshape(np.copy(self.uk), (self.uDim, 1))
 
     def getBall(self):
         return np.copy(self.ball)
@@ -102,4 +104,9 @@ class RealWorldSimulator:
        # print "Velocity 1: {}".format(self.xk[6])
        # print "Velocity 2: {}".format(self.xk[7])
 
+    def randomActionVector(self, n):
+        U = np.zeros((n, self.uDim))
+        for i in range(n):
+            U[i] = self.env.action_space.sample()
+        return U
 

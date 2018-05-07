@@ -7,20 +7,20 @@ class Controller:
     def __init__(self, model, simulator):
         self.xDim = 8
         self.uDim = 2
-        self.R = np.identity(self.uDim) * 1e-2
+        self.R = np.identity(self.uDim) * 10
         self.Q = self.setQ()
         self.finalQ = self.setFinalQ()
-        self.numOfSteps = 12
+        self.numOfSteps = 25
         self.t = 0
         self.threshold = 1e-3
         self.model = model
-        self.dt = 1e-3 #TODO: Look at size of dt
+        self.dt = 1 #TODO: Look at size of dt
         self.maxIter = 100
         self.lambMax = 1000
         self.lambFactor = 10
         self.simulator = simulator
         self.ball = np.copy(self.simulator.getBall())
-        self.U = np.zeros((self.numOfSteps, self.uDim))
+        self.U = simulator.randomActionVector(self.numOfSteps)
         self.X = np.zeros((self.numOfSteps, self.xDim))
 
     # Calculate next step using the iLQR algorithm
@@ -93,7 +93,9 @@ class Controller:
                     # f_x = np.eye + A(t)
                     # f_u = B(t)
                     A, B = self.deriveAB(X[t], U[t])
-                    f_x[t] = np.eye(self.xDim) + A * dt
+                    #f_x[t] = np.eye(self.xDim) + A * dt
+                    f_x[t] = A * dt
+
                     f_u[t] = B * dt
 
                     (l[t], l_x[t], l_xx[t], l_u[t], l_uu[t], l_ux[t]) = self.immediateCost(X[t], U[t])
@@ -325,8 +327,8 @@ class Controller:
         Q[3, 3] = 0    # sin(theta) of inner arm
         Q[4, 4] = 1e3  # distance between ball and fingertip - X axis
         Q[5, 5] = 1e3  # distance between ball and fingertip - Y axis
-        Q[6, 6] = 0    # velocity of inner arm
-        Q[7, 7] = 0    # velocity of outer arm
+        Q[6, 6] = 0  # velocity of inner arm
+        Q[7, 7] = 0  # velocity of outer arm
 
         return Q
 
@@ -338,9 +340,9 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 1e8   # distance between ball and fingertip - X axis
-        Q[5, 5] = 1e8   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 5e6   # velocity of inner arm
-        Q[7, 7] = 5e6   # velocity of outer arm
+        Q[4, 4] = 5e5   # distance between ball and fingertip - X axis
+        Q[5, 5] = 5e5   # distance between ball and fingertip - Y axis
+        Q[6, 6] = 5e5   # velocity of inner arm
+        Q[7, 7] = 5e5   # velocity of outer arm
         return Q
 

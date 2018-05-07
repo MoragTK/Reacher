@@ -24,7 +24,7 @@ class Emulator:
     def train(self, db, state=None):
         trainIn, trainOut = db.getAll()
         history = NBatchLogger()
-        self.model.fit(trainIn, trainOut, batch_size=64, epochs=100, verbose=2,
+        self.model.fit(trainIn, trainOut, batch_size=64, epochs=50, verbose=2,
                        callbacks=[history], validation_split=0.3)
         return
 

@@ -2,7 +2,6 @@ from RealWorldSimulator import RealWorldSimulator
 from Emulator import Emulator
 from DataSet import DataSet
 from Controller import Controller
-from Auxilary import plot_next_pos
 import numpy as np
 import time
 import getpass
@@ -16,7 +15,7 @@ latest_file = max(list_of_files, key=os.path.getctime)
 print latest_file
 
 # Algorithm main building blocks
-db = DataSet(size=1e5)               # Initializing an empty data base
+db = DataSet(size=100000)               # Initializing an empty data base
 simulator = RealWorldSimulator()        # Initialize the RealWorldSimulator
 emulator = Emulator(new=False, filePath=latest_file)               # Initialize emulator
 controller = Controller(emulator, simulator)   # Initialize Controller
@@ -31,7 +30,7 @@ if state == 'INITIALIZE':
     # Train model with available samples in the data base.
     start = time.time()
     t = time.time()
-    while time.time() < start + (30 * 60):
+    while time.time() < start + (1 * 60):
 
         ## ???
         '''
@@ -65,9 +64,9 @@ if state == 'TRAIN':
     samplesAdded = 0
     while True:
         #print "Sampled added : {}".format(samplesAdded)
-        if samplesAdded == sampleGroupSize:
-            emulator.train(db, state)
-            samplesAdded = 0
+        #if samplesAdded == sampleGroupSize:
+        #    emulator.train(db, state)
+        #    samplesAdded = 0
 
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
@@ -77,7 +76,7 @@ if state == 'TRAIN':
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk_1 = simulator.actUk(uk)
 
-        #simulator.simulate()
+        simulator.simulate()
         db.append(xk_uk, xk_1)
         samplesAdded += 1
 
@@ -88,12 +87,13 @@ if state == 'TRAIN':
         if time.time() > t2 + (60 * 60):
             d = time.gmtime()
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
-            emulator.saveModel(modelDir + "emulator_adam_" + time_stamp)
+            emulator.saveModel(modelDir + "emulator_" + time_stamp)
             t2 = time.time()
 
-        if time.time() > t3 + (5 * 60):
-            simulator.generateRandomSamples(sampleGroupSize, db)
-            t3 = time.time()
+       # if time.time() > t3 + (5 * 60):
+       #     simulator.generateRandomSamples(sampleGroupSize, db)
+       #     t3 = time.time()
+       #     print "Generating Random Samples"
 
 '''
 else state == 'RUN':
