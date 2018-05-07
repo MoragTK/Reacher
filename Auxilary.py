@@ -33,7 +33,8 @@ def plotCurve(X, ball, step, uk):
     plt.plot(X[-1, 4], X[-1, 5], 'ro')
     plt.text(X[-1, 4], X[-1, 5], 'End')
     plt.figtext(0.15, 0.12, "Uk: {}".format(uk))
-    plt.savefig(figPath + 'step_0' + str(step))
+    number = "%03d" % step
+    plt.savefig(figPath + 'step_' + number)
     #plt.text(X[-1, 4], X[-1, 5]+0.03, str(cost))
     plt.show(block=False)
     #print "cost: " +str(cost)
@@ -41,6 +42,20 @@ def plotCurve(X, ball, step, uk):
     plt.pause(2)
     plt.clf()
 
+
+def constrained(u, lowerLim=-1, upperLim=1):
+
+    if u[0] > upperLim:
+        u[0] = upperLim
+    if u[0] < lowerLim:
+        u[0] = lowerLim
+
+    if u[1] > upperLim:
+        u[1] = upperLim
+    if u[1] < lowerLim:
+        u[1] = lowerLim
+
+    return u
 '''
 def solveRiccati(A, B, Pk, Q, R):
 

@@ -23,13 +23,13 @@ class DataSet:
 
     # getAll - returns all data base for training purposes, normalized and shuffled.
     def getAll(self):  # TODO: Consider changing the emulator input
-        xuIn = np.zeros((self.size, 10))
-        xOut = np.zeros((self.size, 8))
-        for i in range(0, self.size):
+        xuIn = np.zeros((self.numOfElements, 10))
+        xOut = np.zeros((self.numOfElements, 8))
+        for i in range(0, self.numOfElements):
             tmpOut = self.Q.pop()
             xuIn[i, :] = np.copy(tmpOut[:10, 0])
             xOut[i, :] = np.copy(tmpOut[10:, 0])
-        for i in range(0, self.size):
+        for i in range(0, self.numOfElements):
             tmpIn = np.vstack((np.reshape((xuIn[i, :]), (10, 1)), np.reshape((xOut[i, :]), (8, 1))))
             self.Q.appendleft(np.copy(tmpIn))
         return [np.copy(xuIn), np.copy(xOut)]

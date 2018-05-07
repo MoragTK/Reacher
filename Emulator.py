@@ -3,8 +3,11 @@ from keras.layers import Dense
 from keras.callbacks import Callback
 from keras import optimizers
 import numpy as np
-class Emulator():
-    def __init__(self, new=False,filePath=''):
+
+
+class Emulator:
+
+    def __init__(self, new=False, filePath=''):
         if new:
             self.model = Sequential()
             self.model.add(Dense(100, input_dim=10, kernel_initializer='normal', activation='tanh'))
@@ -15,22 +18,19 @@ class Emulator():
         else:
             self.restoreModel(filePath)
 
-
     def compile(self):
         self.model.compile(loss='mean_squared_error', optimizer=self.optimizer)
-    def train(self, db,state=None):
-        input, target = db.getAll()
-        history = NBatchLogger()
 
-        self.model.fit(input, target, batch_size=150, epochs=100, verbose=2,
-                       callbacks=[history],
-                 validation_split=0.3)
+    def train(self, db, state=None):
+        trainIn, trainOut = db.getAll()
+        history = NBatchLogger()
+        self.model.fit(trainIn, trainOut, batch_size=64, epochs=100, verbose=2,
+                       callbacks=[history], validation_split=0.3)
         return
 
-
     def predict(self, xk,uk):
-        xk_ = np.reshape(np.copy(xk), (1,8))
-        uk_ = np.reshape(np.copy(uk), (1,2))
+        xk_ = np.reshape(np.copy(xk), (1, 8))
+        uk_ = np.reshape(np.copy(uk), (1, 2))
         xk_uk = np.hstack((xk_, uk_))
         return self.model.predict(xk_uk)
 
@@ -38,14 +38,14 @@ class Emulator():
         self.model.save(filePath)
 
     def restoreModel(self, filePath):
-        self.model =load_model(filePath)
+        self.model = load_model(filePath)
 
     def evaluate(self,xk,uk,xk1):
         xk_ = np.reshape(np.copy(xk), (1, 8))
         uk_ = np.reshape(np.copy(uk), (1, 2))
         xuk = np.hstack((xk_, uk_))
-        target=np.reshape(np.copy(xk1), (1, 8))
-        err=self.model.evaluate( x=xuk, y=target, batch_size=100,verbose=0)
+        target= np.reshape(np.copy(xk1), (1, 8))
+        err = self.model.evaluate(x=xuk, y=target, batch_size=100,verbose=0)
         print err
 
 class NBatchLogger(Callback):

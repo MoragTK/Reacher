@@ -1,5 +1,5 @@
 import numpy as np
-from Auxilary import plotCurve, xMx
+from Auxilary import plotCurve, xMx, constrained
 
 
 class Controller:
@@ -7,16 +7,15 @@ class Controller:
     def __init__(self, model, simulator):
         self.xDim = 8
         self.uDim = 2
-        self.R = np.identity(self.uDim)*1e-4
+        self.R = np.identity(self.uDim) * 1e-2
         self.Q = self.setQ()
         self.finalQ = self.setFinalQ()
-        self.numOfSteps = 16
+        self.numOfSteps = 12
         self.t = 0
-        self.real_t = 0
         self.threshold = 1e-3
         self.model = model
         self.dt = 1e-3 #TODO: Look at size of dt
-        self.maxIter = 10000
+        self.maxIter = 100
         self.lambMax = 1000
         self.lambFactor = 10
         self.simulator = simulator
@@ -29,21 +28,24 @@ class Controller:
         if self.ball[0] != self.simulator.getBall()[0] or self.ball[1] != self.simulator.getBall()[1]:
             self.reset()
 
-        if self.t >= self.numOfSteps - 1:
-            return np.zeros(2)
-            print "Done!!"
-            #self.reset()
-        U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
-        self.X, self.U[self.t:], cost = self.ilqr(x0, U)
-        nextAction = self.U[self.t]
+     #   if self.t >= self.numOfSteps - 1:
+       #     return np.zeros(2)
+       #     print "Done!!"
+        #    #self.reset()
+        #U = np.copy(self.U[self.t:])  # TODO: Check that still controllable
+        U = np.copy(np.roll(self.U, -1))
+        U[-1] = np.array([0., 0.])
+        #print "U: {}".format(U)
+        self.X, self.U, cost = self.ilqr(x0, U)
+
+        nextAction = self.U[0]
+        #print "U Content: {}".format(self.U)  #TODO DELETE
 
         # Plotting trajectory
-        plotCurve(self.X, self.simulator.getBall(), self.real_t, nextAction)
+        plotCurve(self.X, self.simulator.getBall(), self.t, nextAction)
 
         # move us a step forward in our control sequence
-        if self.t < self.numOfSteps - 8:
-            self.t += 1
-        self.real_t += 1
+        self.t += 1
 
         return nextAction
 
@@ -56,7 +58,7 @@ class Controller:
         """
         U = self.U if U is None else U
 
-        tN = U.shape[0]  # number of time steps
+        tN = self.numOfSteps #TODO DELETE U.shape[0]  # number of time steps
         dt = self.dt  # time step
 
         lamb = 0.01  # regularization parameter  todo u chage it
@@ -142,8 +144,8 @@ class Controller:
                 Q_uu_evals, Q_uu_evecs = np.linalg.eig(Q_uu)
                 Q_uu_evals[Q_uu_evals < 0] = 0.0
                 Q_uu_evals += lamb
-                Q_uu_inv = np.dot(Q_uu_evecs,
-                                  np.dot(np.diag(1.0 / Q_uu_evals), Q_uu_evecs.T))
+                #print "Q_uu_evals: {}".format(Q_uu_evals) #TODO: Check lambda's scale
+                Q_uu_inv = np.dot(Q_uu_evecs, np.dot(np.diag(1.0 / Q_uu_evals), Q_uu_evecs.T))
 
                 # 5b) k = -np.dot(Q_uu^-1, Q_u)
                 k[t] = -np.dot(Q_uu_inv, Q_u)
@@ -165,21 +167,8 @@ class Controller:
                 # to take a stab at the optimal control signal
                 Unew[t] = U[t] + k[t] + np.dot(K[t], xnew - X[t])  # 7b)
 
-                # Adding constraints on the action:
-                #Unew[t] = min([[max(Unew[t]), -1], 1])
-                #distance = self.simulator.getBall()
-                #distance[0] = abs(X[t][4] - distance[0])
-                #distance[1] = abs(X[t][5] - distance[1])
-
-                #if distance[0] > 0.08 or distance[1] > 0.08:
-                    #print "Distance (X,Y): ({},{})".format(X[t][4], X[t][5])
-                    #print distance
-                # TODO: Adjust Uk
-                Unew[t] = np.tanh(Unew[t]) #divide(Unew[t], 100)
-                #Unew[t]=min(max(Unew[t][0],-1),1)
-                #Unew[t] = min(max(Unew[t][1], -1), 1)
                 # given this u, find our next state
-                xnew = self.plant_dynamics(xnew, Unew[t])  # 7c)
+                xnew = self.plantDynamics(xnew, Unew[t])  # 7c)
 
             # evaluate the new trajectory
             Xnew, newCost = self.calculateTrajectory(x0, Unew)
@@ -231,12 +220,12 @@ class Controller:
 
         # Run simulation with substeps
         for t in range(tN - 1):
-            X[t + 1] = self.plant_dynamics(X[t], U[t])
+            X[t + 1] = self.plantDynamics(X[t], U[t])
             l, _, _, _, _, _ = self.immediateCost(X[t], U[t])
-            cost = cost + dt * l # todo this is origin
-            #cost = cost +  l
+            cost = cost + dt * l
         # Adjust for final cost, subsample trajectory
         l_f, _, _ = self.finalCost(X[-1])
+        #print "Cost: {} FinalCost: {}".format(cost, l_f)
         cost = cost + l_f
 
         return X, cost
@@ -244,6 +233,7 @@ class Controller:
     # TODO: Document
     def immediateCost(self, x, u):
         """ the immediate state cost function """
+        u = constrained(u)
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         xTarget = np.copy(x_)
@@ -251,6 +241,7 @@ class Controller:
         xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
         # compute cost
         l = 0.5*xMx(u_, self.R) + 0.5 * xMx(xTarget, self.Q)
+        #print "uRu: {}, xQx: {}".format(xMx(u_, self.R), xMx(xTarget, self.Q))
         # compute derivatives of cost
         #l_x = np.zeros(self.xDim).squeeze()
         #l_xx = np.zeros((self.xDim, self.xDim))
@@ -263,15 +254,17 @@ class Controller:
         return l, l_x, l_xx, l_u, l_uu, l_ux
 
     def finalCost(self, x):
+        #print "Final X is: {},{}".format(x[4],x[5])
         """ the final state cost function """
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         xTarget = np.copy(x_)
         xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
         xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        #print "X : {} Y: {}".format(xTarget[4, 0], xTarget[5, 0])
         l = 0.5*xMx(xTarget, self.finalQ)
         l_x = np.matmul(xTarget.T, self.finalQ).squeeze()  # TODO: Make sure dims are good
         l_xx = self.finalQ
-
+        #print "Final Velocity: {},{}".format(xTarget[6,0], xTarget[7,0])
         # Final cost only requires these three values
         return l, l_x, l_xx
 
@@ -304,22 +297,19 @@ class Controller:
         return A, B
 
     #TODO
-    def plant_dynamics(self, x, u):
+    def plantDynamics(self, x, u):
             """ simulate a single time step of the plant, from
             initial state x and applying control signal u
             x np.array: the state of the system
             u np.array: the control signal
             """
             xNext = self.model.predict(x, u)
-            # calculate the change in state
-            #xdot = ((xNext - x) / self.arm.dt).squeeze()
 
             return xNext.squeeze()
 
 
     def reset(self):
         """ reset the state of the system """
-        #print " i just entered reset!"
         # Index along current control sequence
         self.t = 0
         self.U = np.zeros((self.numOfSteps, self.uDim))
@@ -329,14 +319,15 @@ class Controller:
     def setQ(self):
 
         Q = np.zeros((self.xDim, self.xDim))
-        Q[0, 0] = 0   # cos(theta) of outer arm
-        Q[1, 1] = 0   # cos(theta) of inner arm
-        Q[2, 2] = 0   # sin(theta) of outer arm
-        Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 1e3 # distance between ball and fingertip - X axis
-        Q[5, 5] = 1e3 # distance between ball and fingertip - Y axis
-        Q[6, 6] = 0   # velocity of inner arm
-        Q[7, 7] = 0   # velocity of outer arm
+        Q[0, 0] = 0    # cos(theta) of outer arm
+        Q[1, 1] = 0    # cos(theta) of inner arm
+        Q[2, 2] = 0    # sin(theta) of outer arm
+        Q[3, 3] = 0    # sin(theta) of inner arm
+        Q[4, 4] = 1e3  # distance between ball and fingertip - X axis
+        Q[5, 5] = 1e3  # distance between ball and fingertip - Y axis
+        Q[6, 6] = 0    # velocity of inner arm
+        Q[7, 7] = 0    # velocity of outer arm
+
         return Q
 
     # set Q function
