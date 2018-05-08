@@ -62,11 +62,13 @@ if state == 'TRAIN':
     t3 = start  # For generating random samples
     sampleGroupSize = 40
     samplesAdded = 0
+    enoughSamples = False
     while True:
         #print "Sampled added : {}".format(samplesAdded)
-        #if samplesAdded == sampleGroupSize:
-        #    emulator.train(db, state)
-        #    samplesAdded = 0
+        #if enoughSamples is True:
+         #   if samplesAdded >= sampleGroupSize:
+          #      emulator.train(db, state)
+           #     samplesAdded = 0
 
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
@@ -80,20 +82,23 @@ if state == 'TRAIN':
         db.append(xk_uk, xk_1)
         samplesAdded += 1
 
-        if time.time() > t1 + (5 * 60):
+        if samplesAdded == 10000:
+            enoughSamples = True
+
+        if time.time() > t1 + (3 * 60):
             simulator.reset()
             t1 = time.time()
 
-        if time.time() > t2 + (60 * 60):
+        if time.time() > t2 + (30 * 60):
             d = time.gmtime()
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
             emulator.saveModel(modelDir + "emulator_" + time_stamp)
             t2 = time.time()
 
-       # if time.time() > t3 + (5 * 60):
-       #     simulator.generateRandomSamples(sampleGroupSize, db)
-       #     t3 = time.time()
-       #     print "Generating Random Samples"
+      #  if time.time() > t3 + (10 * 60):
+      #      simulator.generateRandomSamples(sampleGroupSize, db)
+      #      t3 = time.time()
+      #      print "Generating Random Samples"
 
 '''
 else state == 'RUN':

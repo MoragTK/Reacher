@@ -109,4 +109,7 @@ class RealWorldSimulator:
         for i in range(n):
             U[i] = self.env.action_space.sample()
         return U
-
+    def distance(self):
+        from math import sqrt
+        dis= sqrt(((abs(self.xk[4]-self.ball[0]))**2) +((abs(self.xk[5]-self.ball[1]))**2))
+        return dis

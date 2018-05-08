@@ -7,20 +7,21 @@ class Controller:
     def __init__(self, model, simulator):
         self.xDim = 8
         self.uDim = 2
-        self.R = np.identity(self.uDim) * 10
+        self.R = self.setR()
         self.Q = self.setQ()
         self.finalQ = self.setFinalQ()
-        self.numOfSteps = 25
+        self.numOfSteps = 8
         self.t = 0
         self.threshold = 1e-3
         self.model = model
         self.dt = 1 #TODO: Look at size of dt
-        self.maxIter = 100
+        self.maxIter = 50
         self.lambMax = 1000
         self.lambFactor = 10
         self.simulator = simulator
         self.ball = np.copy(self.simulator.getBall())
-        self.U = simulator.randomActionVector(self.numOfSteps)
+        #self.U = simulator.randomActionVector(self.numOfSteps)
+        self.U=np.zeros((self.numOfSteps,self.uDim))
         self.X = np.zeros((self.numOfSteps, self.xDim))
 
     # Calculate next step using the iLQR algorithm
@@ -167,7 +168,13 @@ class Controller:
                 # use feedforward (k) and feedback (K) gain matrices
                 # calculated from our value function approximation
                 # to take a stab at the optimal control signal
-                Unew[t] = U[t] + k[t] + np.dot(K[t], xnew - X[t])  # 7b)
+                alpha=1
+                if self.simulator.distance()<0.1:
+                    alpha=self.simulator.distance()*0.01
+                    print alpha
+                else: alpha=1
+
+                Unew[t] = U[t] + alpha*k[t] + np.dot(K[t], xnew - X[t])  # 7b)
 
                 # given this u, find our next state
                 xnew = self.plantDynamics(xnew, Unew[t])  # 7c)
@@ -262,6 +269,8 @@ class Controller:
         xTarget = np.copy(x_)
         xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
         xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        from math import sqrt
+        #print "sqrt dis: "+str(sqrt(xTarget[4,0]**2+xTarget[5,0]**2))
         #print "X : {} Y: {}".format(xTarget[4, 0], xTarget[5, 0])
         l = 0.5*xMx(xTarget, self.finalQ)
         l_x = np.matmul(xTarget.T, self.finalQ).squeeze()  # TODO: Make sure dims are good
@@ -325,8 +334,8 @@ class Controller:
         Q[1, 1] = 0    # cos(theta) of inner arm
         Q[2, 2] = 0    # sin(theta) of outer arm
         Q[3, 3] = 0    # sin(theta) of inner arm
-        Q[4, 4] = 1e3  # distance between ball and fingertip - X axis
-        Q[5, 5] = 1e3  # distance between ball and fingertip - Y axis
+        Q[4, 4] = 1e2  # distance between ball and fingertip - X axis
+        Q[5, 5] = 1e2  # distance between ball and fingertip - Y axis
         Q[6, 6] = 0  # velocity of inner arm
         Q[7, 7] = 0  # velocity of outer arm
 
@@ -340,9 +349,11 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 5e5   # distance between ball and fingertip - X axis
-        Q[5, 5] = 5e5   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 5e5   # velocity of inner arm
-        Q[7, 7] = 5e5   # velocity of outer arm
+        Q[4, 4] = 5e3   # distance between ball and fingertip - X axis
+        Q[5, 5] = 5e3   # distance between ball and fingertip - Y axis
+        Q[6, 6] = 1e3   # velocity of inner arm
+        Q[7, 7] = 1e3   # velocity of outer arm
         return Q
 
+    def setR(self):
+        return np.identity(self.uDim)*0.01
