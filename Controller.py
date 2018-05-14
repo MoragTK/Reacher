@@ -1,7 +1,7 @@
 import numpy as np
 from Auxilary import xMx, constrained
 from sklearn.metrics import mean_squared_error as mse
-
+import time
 class Controller:
 
     def __init__(self, model, simulator, plotter):
@@ -15,7 +15,7 @@ class Controller:
         self.threshold = 1e-3
         self.model = model
         self.dt = 1
-        self.maxIter = 100
+        self.maxIter = 80
         self.lambMax = 1000
         self.lambFactor = 10
         self.simulator = simulator
@@ -91,6 +91,7 @@ class Controller:
                     # f_x = np.eye + A(t)
                     # f_u = B(t)
                     #"From ilqr: {}".format(U[t])
+                    #print "I'm here!"
                     A, B = self.deriveAB(X[t], U[t])
                     #f_x[t] = np.eye(self.xDim) + A * dt
                     f_x[t] = A * dt
@@ -107,6 +108,8 @@ class Controller:
                 l[-1], l_x[-1], l_xx[-1] = self.finalCost(X[-1])
 
                 sim_new_trajectory = False
+
+            #print "I'm here! {}".format(t)
 
             # optimize things!
             # initialize Vs with final state cost and set up k, K
@@ -280,7 +283,6 @@ class Controller:
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         xk1 = self.model.predict(x_, u_)
         A, B = self.model.deriveAB(x, u, xk1)
-
         '''x_ = np.reshape(np.copy(x), (self.xDim, 1))
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         A = np.ones((self.xDim, self.xDim))

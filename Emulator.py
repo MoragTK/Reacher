@@ -1,13 +1,19 @@
 from keras.models import Sequential, load_model
 from keras.layers import Dense
 from keras.callbacks import Callback
+import keras
 from keras import optimizers
 import numpy as np
 import tensorflow as tf
 import keras.backend as kb
 
 # from Auxilary import TrainErrorPlot, OnlineErrorPlot
+import getpass
+import os
+import glob
 
+username = getpass.getuser()
+modelDir = '/home/' + username + '/PycharmProjects/Reacher/Networks/'
 
 class Emulator:
 
@@ -16,6 +22,7 @@ class Emulator:
         self.uDim = 2
         self.plotter = plotter
 
+
         if new:
             self.model = Sequential()
             self.model.add(Dense(100, input_dim=10, kernel_initializer='normal', activation='tanh'))
@@ -23,19 +30,29 @@ class Emulator:
             self.model.add(Dense(self.xDim, kernel_initializer='normal'))
             self.optimizer = optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
             self.compile()
+
         else:
             self.restoreModel(filePath)
+
+        # For obtaining gradients
+        self.outputLayer = self.model.layers[-1].output
+        self.inputLayer = self.model.layers[0].input
+        self.grad_y0_ = tf.keras.backend.gradients(self.outputLayer[0][0], self.inputLayer)[0]
+        self.grad_y1_ = tf.keras.backend.gradients(self.outputLayer[0][1], self.inputLayer)[0]
+        self.grad_y2_ = tf.keras.backend.gradients(self.outputLayer[0][2], self.inputLayer)[0]
+        self.grad_y3_ = tf.keras.backend.gradients(self.outputLayer[0][3], self.inputLayer)[0]
+        self.grad_y4_ = tf.keras.backend.gradients(self.outputLayer[0][4], self.inputLayer)[0]
+        self.grad_y5_ = tf.keras.backend.gradients(self.outputLayer[0][5], self.inputLayer)[0]
+        self.grad_y6_ = tf.keras.backend.gradients(self.outputLayer[0][6], self.inputLayer)[0]
+        self.grad_y7_ = tf.keras.backend.gradients(self.outputLayer[0][7], self.inputLayer)[0]
+        #tf.get_default_graph().finalize()
 
     def compile(self):
         self.model.compile(loss='mean_squared_error', optimizer=self.optimizer)
 
     def train(self, db, state=None):
         trainIn, trainOut = db.getAll()
-        #history1 = NBatchLogger()
         history = self.model.fit(trainIn, trainOut, batch_size=64, epochs=50, verbose=0, validation_split=0)
-        #self.trainErrHistory.append(history.history['loss'])
-        #self.trainErrHistory = self.trainErrHistory+(history.history['loss'])
-        #TrainErrorPlot(self.trainErrHistory)
         self.plotter.updateTrainingHistory(history.history['loss']) #TODO: Make the list limited in size
 
     def predict(self, xk, uk):
@@ -56,9 +73,7 @@ class Emulator:
         xuk = np.hstack((xk_, uk_))
         target = np.reshape(np.copy(xk1), (1, self.xDim))
         err = self.model.evaluate(x=xuk, y=target, batch_size=100,verbose=0)
-        #self.onlineErrHistory.append(err)
         self.plotter.updateOnlineHistory(err) #TODO: Make the list limited in size
-        #OnlineErrorPlot(self.onlineErrHistory)
 
     def deriveAB(self, xk, uk, xk1):
         xk_ = np.reshape(np.copy(xk), (1, self.xDim))
@@ -66,42 +81,20 @@ class Emulator:
         xuk = np.hstack((xk_, uk_))
         target = np.reshape(np.copy(xk1), (1, self.xDim))
 
-        self.model.fit(xuk, target, verbose=0)
+        #self.model.fit(xuk, target, batch_size=1, epochs=1, verbose=0, validation_split=0)
+        #self.model.evaluate(x=xuk, y=target, batch_size=100,verbose=0)
 
-        outputLayer = self.model.layers[-1].output
-        inputLayer = self.model.layers[0].input
+        sess = kb.get_session()
+        grad_y = sess.run([self.grad_y0_, self.grad_y1_, self.grad_y2_, self.grad_y3_, self.grad_y4_, self.grad_y5_, self.grad_y6_, self.grad_y7_], feed_dict={self.inputLayer: xuk})
 
-        grad_y0_ = tf.gradients(outputLayer[0][0], inputLayer)
-        grad_y1_ = tf.gradients(outputLayer[0][1], inputLayer)
-        grad_y2_ = tf.gradients(outputLayer[0][2], inputLayer)
-        grad_y3_ = tf.gradients(outputLayer[0][3], inputLayer)
-        grad_y4_ = tf.gradients(outputLayer[0][4], inputLayer)
-        grad_y5_ = tf.gradients(outputLayer[0][5], inputLayer)
-        grad_y6_ = tf.gradients(outputLayer[0][6], inputLayer)
-        grad_y7_ = tf.gradients(outputLayer[0][7], inputLayer)
-
-
-        grad_y = np.zeros((self.xDim, self.xDim + self.uDim))
-
-        tempSess = kb.get_session()
-        grad_y[0] = tempSess.run(grad_y0_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        grad_y[1] = tempSess.run(grad_y1_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        grad_y[2] = tempSess.run(grad_y2_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        grad_y[3] = tempSess.run(grad_y3_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        grad_y[4] = tempSess.run(grad_y4_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        grad_y[5] = tempSess.run(grad_y5_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        grad_y[6] = tempSess.run(grad_y6_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        grad_y[7] = tempSess.run(grad_y7_, feed_dict={inputLayer: np.zeros((1, 10))})[0][0]
-        #tempSess.close()
-
-        A = np.ones((self.xDim, self.xDim))
-        B = np.ones((self.xDim, self.uDim))
+        A = np.zeros((self.xDim, self.xDim))
+        B = np.zeros((self.xDim, self.uDim))
 
         for i in range(self.xDim):
-            A[i, :] = grad_y[i][:8]
+            A[i, :] = grad_y[i][0][:8]
 
         for i in range(self.xDim):
-            B[i, :] = grad_y[i][8:]
+            B[i, :] = grad_y[i][0][8:]
 
         return A, B
 

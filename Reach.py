@@ -68,9 +68,8 @@ if state == 'TRAIN':
 
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
-        #print 'uk: ' + str(uk)
+        print 'uk: ' + str(uk)
         uk = np.reshape(uk, (2, 1))
-
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk1 = simulator.actUk(uk)
 
@@ -82,10 +81,10 @@ if state == 'TRAIN':
         db.append(xk_uk, xk1)
         samplesAdded += 1
 
-        if samplesAdded == sampleGroupSize:
+        if samplesAdded == 1000:
             enoughSamples = True
 
-        if time.time() > t1 + (6 * 60):
+        if time.time() > t1 + (20 * 60):
             simulator.reset()
             t1 = time.time()
             plotter.reset()
