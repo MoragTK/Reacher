@@ -16,10 +16,10 @@ latest_file = max(list_of_files, key=os.path.getctime)
 print latest_file
 
 # Algorithm main building blocks
-db = DataSet(size=100000)               # Initializing an empty data base
+db = DataSet(size=1000)               # Initializing an empty data base
 plotter = PlotData()
 simulator = RealWorldSimulator()        # Initialize the RealWorldSimulator
-emulator = Emulator(plotter, new=False, filePath=latest_file)               # Initialize emulator
+emulator = Emulator(db, plotter, new=False, filePath=latest_file)               # Initialize emulator
 controller = Controller(emulator, simulator, plotter)   # Initialize Controller
 
 
@@ -33,11 +33,11 @@ if state == 'INITIALIZE':
     # Train model with available samples in the data base.
     start = time.time()
     t = time.time()
-    while time.time() < start + (1 * 60):
+    while time.time() < start + (2 * 60):
 
         # Generate random samples for the initial training and insert them to the data set.
         simulator.generateRandomSamples(db.size, db)
-        emulator.train(db, state)
+        emulator.train()
         plotter.plot()
 
         if time.time() > t + (15 * 60):
@@ -63,7 +63,8 @@ if state == 'TRAIN':
         print "Sampled added : {}".format(samplesAdded)
         if enoughSamples is True:
             if samplesAdded >= sampleGroupSize:
-                emulator.train(db, state)
+                print "Training network with updated Data Set..."
+                emulator.train()
                 samplesAdded = 0
 
         xk = simulator.getXk()

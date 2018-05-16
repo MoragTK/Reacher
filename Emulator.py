@@ -1,27 +1,22 @@
 from keras.models import Sequential, load_model
 from keras.layers import Dense
-from keras.callbacks import Callback
-import keras
 from keras import optimizers
 import numpy as np
 import tensorflow as tf
 import keras.backend as kb
-
-# from Auxilary import TrainErrorPlot, OnlineErrorPlot
 import getpass
-import os
-import glob
 
 username = getpass.getuser()
 modelDir = '/home/' + username + '/PycharmProjects/Reacher/Networks/'
 
+
 class Emulator:
 
-    def __init__(self, plotter, new=False, filePath=''):
+    def __init__(self, dataBase, plotter, new=False, filePath=''):
         self.xDim = 8
         self.uDim = 2
+        self.db = dataBase
         self.plotter = plotter
-
 
         if new:
             self.model = Sequential()
@@ -50,8 +45,8 @@ class Emulator:
     def compile(self):
         self.model.compile(loss='mean_squared_error', optimizer=self.optimizer)
 
-    def train(self, db, state=None):
-        trainIn, trainOut = db.getAll()
+    def train(self,):
+        trainIn, trainOut = self.db.getAll()
         history = self.model.fit(trainIn, trainOut, batch_size=64, epochs=50, verbose=0, validation_split=0)
         self.plotter.updateTrainingHistory(history.history['loss']) #TODO: Make the list limited in size
 
@@ -67,38 +62,35 @@ class Emulator:
     def restoreModel(self, filePath):
         self.model = load_model(filePath)
 
-    def evaluatePredictionError(self,xk,uk,xk1):
+    def evaluatePredictionError(self, xk, uk, xk1):
         xk_ = np.reshape(np.copy(xk), (1, self.xDim))
         uk_ = np.reshape(np.copy(uk), (1, self.uDim))
         xuk = np.hstack((xk_, uk_))
         target = np.reshape(np.copy(xk1), (1, self.xDim))
-        err = self.model.evaluate(x=xuk, y=target, batch_size=100,verbose=0)
+        err = self.model.evaluate(x=xuk, y=target, batch_size=64, verbose=0)
         self.plotter.updateOnlineHistory(err) #TODO: Make the list limited in size
 
     def deriveAB(self, xk, uk, xk1):
         xk_ = np.reshape(np.copy(xk), (1, self.xDim))
         uk_ = np.reshape(np.copy(uk), (1, self.uDim))
-        xuk = np.hstack((xk_, uk_))
-        target = np.reshape(np.copy(xk1), (1, self.xDim))
+        #xk1_ = np.reshape(np.copy(xk1), (self.xDim, 1))
 
-        #self.model.fit(xuk, target, batch_size=1, epochs=1, verbose=0, validation_split=0)
-        #self.model.evaluate(x=xuk, y=target, batch_size=100,verbose=0)
+        xuk = np.hstack((xk_, uk_))
 
         sess = kb.get_session()
-        grad_y = sess.run([self.grad_y0_, self.grad_y1_, self.grad_y2_, self.grad_y3_, self.grad_y4_, self.grad_y5_, self.grad_y6_, self.grad_y7_], feed_dict={self.inputLayer: xuk})
+        grad_y = sess.run([self.grad_y0_, self.grad_y1_, self.grad_y2_, self.grad_y3_, self.grad_y4_, self.grad_y5_,
+                           self.grad_y6_, self.grad_y7_],
+                          feed_dict={self.inputLayer: np.zeros(xuk.shape)})
 
         A = np.zeros((self.xDim, self.xDim))
         B = np.zeros((self.xDim, self.uDim))
+        for i in range(self.xDim):
+            A[i, :] = grad_y[i][-1][:8]
 
         for i in range(self.xDim):
-            A[i, :] = grad_y[i][0][:8]
-
-        for i in range(self.xDim):
-            B[i, :] = grad_y[i][0][8:]
+            B[i, :] = grad_y[i][-1][8:]
 
         return A, B
-
-
 
 
 

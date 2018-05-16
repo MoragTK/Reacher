@@ -16,6 +16,7 @@ class DataSet:
     def append(self, xk_uk=None, xk_1=None):
         xk_uk_c = np.copy(xk_uk)
         xk_1_c = np.copy(xk_1)
+
         sample = np.vstack((xk_uk_c, xk_1_c))
         self.Q.append(sample)
         if self.numOfElements < self.size:
