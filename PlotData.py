@@ -17,6 +17,10 @@ class PlotData:
 
         # For Errors:
         self.fig = plt.figure(figsize=(16, 8))
+        self.fig=plt.gcf()
+        self.fig.show()
+        self.fig.canvas.draw()
+
         self.trainErrHistory = []
         self.onlineErrHistory = []
         self.ltiErrHistory = []
@@ -34,8 +38,8 @@ class PlotData:
         yLocations = X[:, 5]
         self.trajectory.set_title("Planned Trajectory", loc="left")
         self.trajectory.plot(xLocations, yLocations, '.-')
-        self.trajectory.set_xlim(-0.25, 0.25)
-        self.trajectory.set_ylim(-0.25, 0.25)
+        self.trajectory.set_xlim(-1, 1)
+        self.trajectory.set_ylim(-1, 1)
         self.trajectory.plot(ball[0], ball[1], 'go')
         self.trajectory.text(ball[0], ball[1], 'ball')
         self.trajectory.plot(X[0, 4], X[0, 5], 'ro')
@@ -82,8 +86,9 @@ class PlotData:
         self.ltiErrGraph.set_ylabel('MSE Error')
 
     def plot(self):
-        plt.pause(2)
+        #plt.pause(2)
         plt.savefig(figPath + self.frameNumber)
+        self.fig.canvas.draw()
 
     def reset(self):
         self.trainErrHistory = []

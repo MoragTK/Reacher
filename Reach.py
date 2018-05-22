@@ -16,25 +16,25 @@ latest_file = max(list_of_files, key=os.path.getctime)
 print latest_file
 
 # Algorithm main building blocks
-db = DataSet(size=1000)               # Initializing an empty data base
+db = DataSet(size=10000)               # Initializing an empty data base
 plotter = PlotData()
 simulator = RealWorldSimulator()        # Initialize the RealWorldSimulator
-emulator = Emulator(db, plotter, new=False, filePath=latest_file)               # Initialize emulator
+emulator = Emulator(db, plotter, new=True, filePath=latest_file)               # Initialize emulator
 controller = Controller(emulator, simulator, plotter)   # Initialize Controller
 
 
 # Mode
 states = ('INITIALIZE', 'TRAIN', 'RUN')
 # Choose state HERE:
-state = states[1]
+state = states[0]
 
 if state == 'INITIALIZE':
     #emulator.restoreModel()
     # Train model with available samples in the data base.
     start = time.time()
     t = time.time()
-    while time.time() < start + (2 * 60):
-
+    #while time.time() < start + (5 * 60):
+    while True:
         # Generate random samples for the initial training and insert them to the data set.
         simulator.generateRandomSamples(db.size, db)
         emulator.train()
@@ -46,6 +46,13 @@ if state == 'INITIALIZE':
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
             emulator.saveModel(modelDir + "emulator_" + time_stamp)
 
+        if (emulator.minTrainError < 1e-7):
+            break
+
+    t = time.time()
+    d = time.gmtime()
+    time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
+    emulator.saveModel(modelDir + "emulator_" + time_stamp)
     state = states[1]
 
 

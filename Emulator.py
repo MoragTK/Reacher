@@ -18,6 +18,9 @@ class Emulator:
         self.db = dataBase
         self.plotter = plotter
 
+        # TODO: temporary:
+        self.minTrainError = 100
+
         if new:
             self.model = Sequential()
             self.model.add(Dense(100, input_dim=10, kernel_initializer='normal', activation='tanh'))
@@ -49,6 +52,7 @@ class Emulator:
         trainIn, trainOut = self.db.getAll()
         history = self.model.fit(trainIn, trainOut, batch_size=64, epochs=50, verbose=0, validation_split=0)
         self.plotter.updateTrainingHistory(history.history['loss']) #TODO: Make the list limited in size
+        self.minTrainError = min(history.history['loss'])
 
     def predict(self, xk, uk):
         xk_ = np.reshape(np.copy(xk), (1, self.xDim))
@@ -80,7 +84,7 @@ class Emulator:
         sess = kb.get_session()
         grad_y = sess.run([self.grad_y0_, self.grad_y1_, self.grad_y2_, self.grad_y3_, self.grad_y4_, self.grad_y5_,
                            self.grad_y6_, self.grad_y7_],
-                          feed_dict={self.inputLayer: np.zeros(xuk.shape)})
+                          feed_dict={self.inputLayer: xuk})
 
         A = np.zeros((self.xDim, self.xDim))
         B = np.zeros((self.xDim, self.uDim))
