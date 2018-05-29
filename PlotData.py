@@ -17,17 +17,20 @@ class PlotData:
 
         # For Errors:
         self.fig = plt.figure(figsize=(16, 8))
-        self.fig=plt.gcf()
+        self.fig = plt.gcf()
         self.fig.show()
         self.fig.canvas.draw()
 
         self.trainErrHistory = []
         self.onlineErrHistory = []
         self.ltiErrHistory = []
+        self.costHistory = []
         self.trajectory = self.fig.add_subplot(2, 2, 1)
-        self.trainErrGraph = self.fig.add_subplot(2, 2, 3)
+        self.tempTrajectory = self.fig.add_subplot(2, 2, 3)
+        #self.trainErrGraph = self.fig.add_subplot(2, 2, 3)
         self.onlineErrGraph = self.fig.add_subplot(2, 2, 2)
-        self.ltiErrGraph = self.fig.add_subplot(2, 2, 4)
+        #self.ltiErrGraph = self.fig.add_subplot(2, 2, 4)
+        self.costGraph = self.fig.add_subplot(2, 2, 4)
 
 
 
@@ -38,8 +41,8 @@ class PlotData:
         yLocations = X[:, 5]
         self.trajectory.set_title("Planned Trajectory", loc="left")
         self.trajectory.plot(xLocations, yLocations, '.-')
-        self.trajectory.set_xlim(-1, 1)
-        self.trajectory.set_ylim(-1, 1)
+        self.trajectory.set_xlim(-1.1, 1.1)
+        self.trajectory.set_ylim(-1.1, 1.1)
         self.trajectory.plot(ball[0], ball[1], 'go')
         self.trajectory.text(ball[0], ball[1], 'ball')
         self.trajectory.plot(X[0, 4], X[0, 5], 'ro')
@@ -85,9 +88,41 @@ class PlotData:
         self.ltiErrGraph.set_xlabel('Step')
         self.ltiErrGraph.set_ylabel('MSE Error')
 
+    def updateCostHistory(self, newData):
+        self.costGraph.cla()
+        self.costHistory.append(newData)
+        X = range(len(np.asarray(self.costHistory)))
+        Y = np.asarray(self.costHistory)
+        self.costGraph.plot(X, Y, '.-')
+        #self.costGraph.set_yscale("log", nonposy='clip')
+        #self.costGraph.set_ylim(bottom=10 ** -7, top=1)
+        self.costGraph.set_title('Cost History', loc="right")
+        self.onlineErrGraph.set_xlabel('Step')
+        self.costGraph.set_ylabel('Cost')
+
+
+    def updateTempTrajectoryState(self, X, ball, itr, cost):
+        self.tempTrajectory.cla()
+        xLocations = X[:, 4]
+        yLocations = X[:, 5]
+        self.tempTrajectory.set_title("Temp Trajectory. Cost: {}".format(cost), loc="left")
+        self.tempTrajectory.plot(xLocations, yLocations, '.-')
+        self.tempTrajectory.set_xlim(-1.1, 1.1)
+        self.tempTrajectory.set_ylim(-1.1, 1.1)
+        self.tempTrajectory.plot(ball[0], ball[1], 'go')
+        self.tempTrajectory.text(ball[0], ball[1], 'ball')
+        self.tempTrajectory.plot(X[0, 4], X[0, 5], 'ro')
+        self.tempTrajectory.text(X[0, 4], X[0, 5], 'start')
+        self.tempTrajectory.plot(X[-1, 4], X[-1, 5], 'ro')
+        self.tempTrajectory.text(X[-1, 4], X[-1, 5], 'End')
+        #self.tempTrajectory.text(0.15, 0.12, "Uk: {}".format(action))
+        #self.frameNumber = "%08d" % itr
+
+
+
     def plot(self):
         #plt.pause(2)
-        plt.savefig(figPath + self.frameNumber)
+        #plt.savefig(figPath + self.frameNumber)
         self.fig.canvas.draw()
 
     def reset(self):

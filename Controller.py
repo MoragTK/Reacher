@@ -10,19 +10,21 @@ class Controller:
         self.R = self.setR()
         self.Q = self.setQ()
         self.finalQ = self.setFinalQ()
-        self.numOfSteps = 12
+        self.numOfSteps = 10
         self.t = 0
         self.threshold = 1e-3
         self.model = model
         self.dt = 1
-        self.maxIter = 80
-        self.lambMax = 1000
-        self.lambFactor = 10
+        self.maxIter = 150
+        self.lambMax = 100000
+        self.lambFactor = 1.2
         self.simulator = simulator
         self.plotter = plotter
         self.ball = np.copy(self.simulator.getBall())
         self.U = np.zeros((self.numOfSteps,self.uDim))
         self.X = np.zeros((self.numOfSteps, self.xDim))
+        self.prevCost = 10000
+
 
     # Calculate next step using the iLQR algorithm
     def calculateNextAction(self, x0):
@@ -33,7 +35,7 @@ class Controller:
        #     return np.zeros(2)
        #     print "Done!!"
         #    #self.reset()
-        U = np.copy(np.roll(self.U, -1))
+        U = np.copy(np.roll(self.U, -2))
         U[-1] = np.array([0., 0.])
         self.X, self.U, cost = self.ilqr(x0, U)
 
@@ -41,9 +43,12 @@ class Controller:
 
         # Plotting trajectory
         self.plotter.updateTrajectoryState(self.X, self.simulator.getBall(), self.t, nextAction)
+        self.plotter.updateCostHistory(cost[0])
+        print "Chosen U:"
+        print self.U
+        print "Chosen Cost: {}".format(cost[0])
 
         # move us a step forward in our control sequence
-        self.t += 1
 
         return nextAction
 
@@ -55,19 +60,26 @@ class Controller:
         U np.array: the initial control trajectory dimensions = [dof, time]
         """
         U = self.U if U is None else U
-
         tN = self.numOfSteps #TODO DELETE U.shape[0]  # number of time steps
         dt = self.dt  # time step
 
+        alpha = 1
         lamb = 1  # regularization parameter  todo u chage it
         sim_new_trajectory = True
+        #X, cost = self.calculateTrajectory(x0, U) #TODO: Delete
 
         for ii in range(self.maxIter):
 
             if sim_new_trajectory == True:
                 # simulate forward using the current control trajectory
-                X, cost = self.calculateTrajectory(x0, U)
-                #plotCurve(X,self.simulator.getBall(),cost,self.t)
+                X, cost = self.calculateTrajectory(x0, U) #TODO: return if needed!!
+                print "Sim New trajectory; Cost: {}".format(cost)
+                print "Sim New trajectory; U:"
+                print U
+
+                #if ii == 0:
+                #    print "First U: {}".format(U)
+                #    print "1. First Cost: {}".format(cost)
                 oldCost = np.copy(cost)  # copy for exit condition check
 
                 # now we linearly approximate the dynamics, and quadratically
@@ -106,9 +118,8 @@ class Controller:
                     l_uu[t] *= dt
                     l_ux[t] *= dt
                 l[-1], l_x[-1], l_xx[-1] = self.finalCost(X[-1])
-
+                #print "l sum: {}".format(l.sum())
                 sim_new_trajectory = False
-
             #print "I'm here! {}".format(t)
 
             # optimize things!
@@ -169,36 +180,36 @@ class Controller:
                 # use feedforward (k) and feedback (K) gain matrices
                 # calculated from our value function approximation
                 # to take a stab at the optimal control signal
-                #alpha=1
-          #      if self.simulator.distance()<0.1:
-           #         alpha=self.simulator.distance()*0.01
-            #        #print 'dis: '+str(alpha*100)
-             #   else: alpha=1
 
-                Unew[t] = U[t] + k[t] + np.dot(K[t], xnew - X[t])  # 7b)
+                Unew[t] = U[t] + alpha*k[t] + np.dot(K[t], xnew - X[t])  # 7b)
 
                 # given this u, find our next state
+                Unew[t] = constrained(np.copy(Unew[t]))
                 xnew = self.plantDynamics(xnew, Unew[t])  # 7c)
 
             # evaluate the new trajectory
-            Xnew, newCost = self.calculateTrajectory(x0, Unew)
+            #print "Calling from Unew:"
 
+            Xnew, newCost = self.calculateTrajectory(x0, Unew)
+            print "Unew Cost: {}".format(newCost)
             # Levenberg-Marquardt heuristic
             if newCost < cost:
+                print "newCost is lower!"
                 # decrease lambda (get closer to Newton's method)
                 lamb /= self.lambFactor
 
                 X = np.copy(Xnew)  # update trajectory
                 U = np.copy(Unew)  # update control signal
+                #print "The Unew is: {}".format(U)
                 oldCost = np.copy(cost)
                 cost = np.copy(newCost)
-
                 sim_new_trajectory = True  # do another rollout
 
                 # print("iteration = %d; Cost = %.4f;"%(ii, newCost) +
                 #         " logLambda = %.1f"%np.log(lamb))
                 # check to see if update is small enough to exit
                 if ii > 0 and ((abs(oldCost - cost) / cost) < self.threshold):
+                    #print "Under threshold!"
                     #print("Converged at iteration = %d; Cost = %.4f;" % (ii, newCost) +
                     #      " logLambda = %.1f" % np.log(lamb))
                     break
@@ -208,9 +219,16 @@ class Controller:
                 lamb *= self.lambFactor
                 # print("cost: %.4f, increasing lambda to %.4f")%(cost, lamb)
                 if lamb > self.lambMax:
+                    print "Lambda is bigger than max"
                     #print("lambda > max_lambda at iteration = %d;" % ii +
                      #     " Cost = %.4f; logLambda = %.1f" % (cost,np.log(lamb)))
                     break
+
+            #print "{}. Cost: {}".format(ii, newCost[0])
+            alpha *= 0.95
+            #print "{}. cost: {}".format(ii, cost)
+           # self.plotter.updateTempTrajectoryState(X, self.simulator.getBall(), ii, cost)
+           # self.plotter.plot()
 
         return X, U, cost
 
@@ -222,6 +240,12 @@ class Controller:
                 x0 np.array: the initial state of the system
                 U np.array: the control sequence to apply
                 """
+        #print "inside Calculate Trajectory:"
+        #print "x0:"
+        #print x0
+        #print "U:"
+        #print U
+
         tN = U.shape[0]
         dt = self.dt
         X = np.zeros((tN, self.xDim))
@@ -238,6 +262,7 @@ class Controller:
         #print "Cost: {} FinalCost: {}".format(cost, l_f)
         cost = cost + l_f
 
+        #print "Cost: {}".format(cost)
         return X, cost
 
     # TODO: Document
@@ -273,7 +298,6 @@ class Controller:
         l = 0.5*xMx(xTarget, self.finalQ)
         l_x = np.matmul(xTarget.T, self.finalQ).squeeze()  # TODO: Make sure dims are good
         l_xx = self.finalQ
-        #print "Final Velocity: {},{}".format(xTarget[6,0], xTarget[7,0])
         # Final cost only requires these three values
         return l, l_x, l_xx
 
@@ -282,7 +306,7 @@ class Controller:
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         xk1 = self.model.predict(x_, u_)
-        A, B = self.model.deriveAB(x, u, xk1)
+        A, B = self.model.deriveAB(x, u)
         '''x_ = np.reshape(np.copy(x), (self.xDim, 1))
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         A = np.ones((self.xDim, self.xDim))
@@ -337,6 +361,7 @@ class Controller:
         ltiErr = mse(xk1_lti, xk1_)
         self.plotter.updateLTIHistory(ltiErr)
 
+
     # set Q function
     def setQ(self):
 
@@ -345,25 +370,25 @@ class Controller:
         Q[1, 1] = 0    # cos(theta) of inner arm
         Q[2, 2] = 0    # sin(theta) of outer arm
         Q[3, 3] = 0    # sin(theta) of inner arm
-        Q[4, 4] = 1e2  # distance between ball and fingertip - X axis
-        Q[5, 5] = 1e2  # distance between ball and fingertip - Y axis
-        Q[6, 6] = 1e1  # velocity of inner arm
-        Q[7, 7] = 1e1  # velocity of outer arm
+        Q[4, 4] = 1e3  # distance between ball and fingertip - X axis
+        Q[5, 5] = 1e3  # distance between ball and fingertip - Y axis
+        Q[6, 6] = 1    # velocity of inner arm
+        Q[7, 7] = 1    # velocity of outer arm
 
         return Q
 
     # set Q function
     def setFinalQ(self):
-
         Q = np.zeros((self.xDim, self.xDim))
         Q[0, 0] = 0   # cos(theta) of outer arm
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 5e3   # distance between ball and fingertip - X axis
-        Q[5, 5] = 5e3   # distance between ball and fingertip - Y axis
-        Q[6, 6] = 1e3   # velocity of inner arm
-        Q[7, 7] = 1e3   # velocity of outer arm
+        Q[4, 4] = 1e5   # distance between ball and fingertip - X axis
+        Q[5, 5] = 1e5   # distance between ball and fingertip - Y axis
+        Q[6, 6] = 1e5   # velocity of inner arm
+        Q[7, 7] = 1e5   # velocity of outer arm
+        Q = self.setQ()
         return Q
 
     def setR(self):

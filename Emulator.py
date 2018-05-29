@@ -51,7 +51,7 @@ class Emulator:
     def train(self,):
         trainIn, trainOut = self.db.getAll()
         history = self.model.fit(trainIn, trainOut, batch_size=64, epochs=50, verbose=0, validation_split=0)
-        self.plotter.updateTrainingHistory(history.history['loss']) #TODO: Make the list limited in size
+#        self.plotter.updateTrainingHistory(history.history['loss']) #TODO: Make the list limited in size
         self.minTrainError = min(history.history['loss'])
 
     def predict(self, xk, uk):
@@ -74,11 +74,9 @@ class Emulator:
         err = self.model.evaluate(x=xuk, y=target, batch_size=64, verbose=0)
         self.plotter.updateOnlineHistory(err) #TODO: Make the list limited in size
 
-    def deriveAB(self, xk, uk, xk1):
+    def deriveAB(self, xk, uk):
         xk_ = np.reshape(np.copy(xk), (1, self.xDim))
         uk_ = np.reshape(np.copy(uk), (1, self.uDim))
-        #xk1_ = np.reshape(np.copy(xk1), (self.xDim, 1))
-
         xuk = np.hstack((xk_, uk_))
 
         sess = kb.get_session()

@@ -19,7 +19,7 @@ print latest_file
 db = DataSet(size=10000)               # Initializing an empty data base
 plotter = PlotData()
 simulator = RealWorldSimulator()        # Initialize the RealWorldSimulator
-emulator = Emulator(db, plotter, new=True, filePath=latest_file)               # Initialize emulator
+emulator = Emulator(db, plotter, new=False, filePath=latest_file)               # Initialize emulator
 controller = Controller(emulator, simulator, plotter)   # Initialize Controller
 
 
@@ -46,7 +46,7 @@ if state == 'INITIALIZE':
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
             emulator.saveModel(modelDir + "emulator_" + time_stamp)
 
-        if (emulator.minTrainError < 1e-7):
+        if (emulator.minTrainError < 1e-4):
             break
 
     t = time.time()
@@ -67,7 +67,7 @@ if state == 'TRAIN':
     samplesAdded = 0
     enoughSamples = False
     while True:
-        print "Sampled added : {}".format(samplesAdded)
+        #print "Sampled added : {}".format(samplesAdded)
         if enoughSamples is True:
             if samplesAdded >= sampleGroupSize:
                 print "Training network with updated Data Set..."
@@ -76,23 +76,23 @@ if state == 'TRAIN':
 
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
-        print 'uk: ' + str(uk)
+        #print 'uk: ' + str(uk)
         uk = np.reshape(uk, (2, 1))
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk1 = simulator.actUk(uk)
 
         emulator.evaluatePredictionError(xk, uk, xk1)
-        controller.evaluateLTIError(xk, uk, xk1)
+        #controller.evaluateLTIError(xk, uk, xk1)
         plotter.plot()
 
-        #simulator.simulate()
+        simulator.simulate()
         db.append(xk_uk, xk1)
         samplesAdded += 1
 
         if samplesAdded == 1000:
             enoughSamples = True
 
-        if time.time() > t1 + (20 * 60):
+        if time.time() > t1 + (1 * 60):
             simulator.reset()
             t1 = time.time()
             plotter.reset()
