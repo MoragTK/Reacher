@@ -26,7 +26,7 @@ controller = Controller(emulator, simulator, plotter)   # Initialize Controller
 # Mode
 states = ('INITIALIZE', 'TRAIN', 'RUN')
 # Choose state HERE:
-state = states[0]
+state = states[1]
 
 if state == 'INITIALIZE':
     #emulator.restoreModel()
@@ -55,7 +55,7 @@ if state == 'INITIALIZE':
     emulator.saveModel(modelDir + "emulator_" + time_stamp)
     state = states[1]
 
-
+simulator.reset()
 if state == 'TRAIN':
     # In this state, the algorithm performs both ANN Training alongside LQR Control.
 
@@ -66,23 +66,22 @@ if state == 'TRAIN':
     sampleGroupSize = 40
     samplesAdded = 0
     enoughSamples = False
+    simulator.reset()
     while True:
         #print "Sampled added : {}".format(samplesAdded)
-        if enoughSamples is True:
+        '''if enoughSamples is True:
             if samplesAdded >= sampleGroupSize:
-                print "Training network with updated Data Set..."
                 emulator.train()
-                samplesAdded = 0
+                samplesAdded = 0'''
 
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
-        #print 'uk: ' + str(uk)
+        #print "u: {}".format(uk)
         uk = np.reshape(uk, (2, 1))
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk1 = simulator.actUk(uk)
 
         emulator.evaluatePredictionError(xk, uk, xk1)
-        #controller.evaluateLTIError(xk, uk, xk1)
         plotter.plot()
 
         simulator.simulate()
@@ -92,7 +91,7 @@ if state == 'TRAIN':
         if samplesAdded == 1000:
             enoughSamples = True
 
-        if time.time() > t1 + (1 * 60):
+        if time.time() > t1 + (80):
             simulator.reset()
             t1 = time.time()
             plotter.reset()
@@ -103,10 +102,7 @@ if state == 'TRAIN':
             emulator.saveModel(modelDir + "emulator_" + time_stamp)
             t2 = time.time()
 
-      #  if time.time() > t3 + (10 * 60):
-      #      simulator.generateRandomSamples(sampleGroupSize, db)
-      #      t3 = time.time()
-      #      print "Generating Random Samples"
+
 
 '''
 else state == 'RUN':

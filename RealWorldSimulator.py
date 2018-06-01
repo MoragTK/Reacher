@@ -68,9 +68,12 @@ class RealWorldSimulator:
 
     # Resets the simulator state (in case of exception)
     def reset(self):  # TODO: Check return value dimensions
-        self.observation = self.env.reset()  # reset the system to a new state
+        while True:
+            self.observation = self.env.reset()  # reset the system to a new state
+            if (self.observation[9]/0.21)<-0.5:# and (self.observation[9]/0.21)>-0.5:
+                #if (self.observation[8] / 0.21) < 0.5 and (self.observation[8] / 0.21) > -0.5:
+                break
         self.deriveXnFromObservation()
-        # self.env.render()
 
     # Derives the state parameters that are relevant to our program from the current observation tensor.
     def deriveXnFromObservation(self):

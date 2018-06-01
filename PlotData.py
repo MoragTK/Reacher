@@ -26,9 +26,9 @@ class PlotData:
         self.ltiErrHistory = []
         self.costHistory = []
         self.trajectory = self.fig.add_subplot(2, 2, 1)
-        self.tempTrajectory = self.fig.add_subplot(2, 2, 3)
+        self.tempTrajectory = self.fig.add_subplot(2, 2, 2)
         #self.trainErrGraph = self.fig.add_subplot(2, 2, 3)
-        self.onlineErrGraph = self.fig.add_subplot(2, 2, 2)
+        self.onlineErrGraph = self.fig.add_subplot(2, 2, 3)
         #self.ltiErrGraph = self.fig.add_subplot(2, 2, 4)
         self.costGraph = self.fig.add_subplot(2, 2, 4)
 
@@ -122,7 +122,7 @@ class PlotData:
 
     def plot(self):
         #plt.pause(2)
-        #plt.savefig(figPath + self.frameNumber)
+        plt.savefig(figPath + self.frameNumber)
         self.fig.canvas.draw()
 
     def reset(self):
