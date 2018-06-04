@@ -6,6 +6,21 @@ import getpass
 
 username = getpass.getuser()
 figPath = '/home/' + username + '/PycharmProjects/Reacher/Figures/'
+def StopArm(model,x,N=50):
+    x_ = np.reshape(np.copy(x), (1, 8))
+    xtarget = np.copy(x_)
+    xtarget[0, 6] = 0
+    xtarget[0, 7] = 0
+    min = 100
+    uStop = np.zeros((1, 2))
+    for i in range(N):
+        u = np.random.random((1, 2))
+        x1=model.predict(x_,u)
+        MSE = mse(xtarget, x1)
+        if MSE < min:
+            min = MSE
+            uStop = u
+    return uStop
 
 
 def xMx(x, M):

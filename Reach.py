@@ -69,14 +69,13 @@ if state == 'TRAIN':
     simulator.reset()
     while True:
         #print "Sampled added : {}".format(samplesAdded)
-        '''if enoughSamples is True:
+        if enoughSamples is True:
             if samplesAdded >= sampleGroupSize:
                 emulator.train()
-                samplesAdded = 0'''
+                samplesAdded = 0
 
         xk = simulator.getXk()
         uk = controller.calculateNextAction(xk)
-        #print "u: {}".format(uk)
         uk = np.reshape(uk, (2, 1))
         xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
         xk1 = simulator.actUk(uk)
@@ -91,7 +90,7 @@ if state == 'TRAIN':
         if samplesAdded == 1000:
             enoughSamples = True
 
-        if time.time() > t1 + (80):
+        if time.time() > t1 + (30):
             simulator.reset()
             t1 = time.time()
             plotter.reset()

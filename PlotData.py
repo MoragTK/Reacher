@@ -122,7 +122,7 @@ class PlotData:
 
     def plot(self):
         #plt.pause(2)
-        plt.savefig(figPath + self.frameNumber)
+        #plt.savefig(figPath + self.frameNumber)
         self.fig.canvas.draw()
 
     def reset(self):

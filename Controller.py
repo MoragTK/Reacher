@@ -1,8 +1,6 @@
 import numpy as np
-from Auxilary import xMx, constrained
+from Auxilary import xMx, constrained,StopArm
 from sklearn.metrics import mean_squared_error as mse
-import time
-from numpy.linalg import inv
 
 class Controller:
 
@@ -12,7 +10,7 @@ class Controller:
         self.R = self.setR()
         self.Q = self.setQ()
         self.finalQ = self.setFinalQ()
-        self.numOfSteps = 6
+        self.numOfSteps = 8
         self.t = 0
         self.threshold = 1e-4
         self.model = model
@@ -35,15 +33,15 @@ class Controller:
 
 
         U = np.copy(np.roll(self.U, -2))
-        #U[-1] = np.copy(U[-2] / -2)
-        U[-1] = np.array([0., 0.])
+        uStop=StopArm(self.model,self.X[-1,:])
+        U[-1,:] = uStop
         self.X, self.U, cost = self.ilqr(x0, U)
         nextAction = self.U[0]
 
         # Plotting trajectory
         self.plotter.updateTrajectoryState(self.X, self.simulator.getBall(), self.t, nextAction)
         self.plotter.updateCostHistory(cost[0])
-        self.t += 1
+
 
         return nextAction
 
@@ -78,8 +76,8 @@ class Controller:
                 l_ux = np.zeros((tN, self.uDim, self.xDim))  # d^2 l / du / dx
                 for t in range(tN - 1):
                     A, B = self.deriveAB(X[t], U[t])
-                    f_x[t] = A * dt
-                    f_u[t] = B * dt
+                    f_x[t] = A
+                    f_u[t] = B
                     (l[t], l_x[t], l_xx[t], l_u[t], l_uu[t], l_ux[t]) = self.immediateCost(X[t], U[t])
                 l[-1], l_x[-1], l_xx[-1] = self.finalCost(X[-1])
                 ##print "l sum: {}".format(l.sum())
@@ -236,8 +234,8 @@ class Controller:
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         xTarget = np.copy(x_)
-        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
-        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        xTarget[4, 0] = (x_[4, 0] - self.simulator.getBall()[0])
+        xTarget[5, 0] = (x_[5, 0] - self.simulator.getBall()[1])
         # compute cost
         l = 0.5*xMx(u_, self.R) + 0.5 * xMx(xTarget, self.Q)
         ##print "uRu: {}, xQx: {}".format(xMx(u_, self.R), xMx(xTarget, self.Q))
@@ -257,8 +255,8 @@ class Controller:
         """ the final state cost function """
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         xTarget = np.copy(x_)
-        xTarget[4, 0] = abs(x_[4, 0] - self.simulator.getBall()[0])
-        xTarget[5, 0] = abs(x_[5, 0] - self.simulator.getBall()[1])
+        xTarget[4, 0] = (x_[4, 0] - self.simulator.getBall()[0])
+        xTarget[5, 0] = (x_[5, 0] - self.simulator.getBall()[1])
         l = 0.5*xMx(xTarget, self.finalQ)
         l_x = np.matmul(xTarget.T, self.finalQ).squeeze()  # TODO: Make sure dims are good
         l_xx = self.finalQ
@@ -313,8 +311,8 @@ class Controller:
         Q[1, 1] = 0    # cos(theta) of inner arm
         Q[2, 2] = 0    # sin(theta) of outer arm
         Q[3, 3] = 0    # sin(theta) of inner arm
-        Q[4, 4] = 5e2  # distance between ball and fingertip - X axis
-        Q[5, 5] = 5e2  # distance between ball and fingertip - Y axis
+        Q[4, 4] = 1e2  # distance between ball and fingertip - X axis
+        Q[5, 5] = 1e2  # distance between ball and fingertip - Y axis
         Q[6, 6] = 1    # velocity of inner arm
         Q[7, 7] = 1    # velocity of outer arm
 
@@ -327,8 +325,8 @@ class Controller:
         Q[1, 1] = 0   # cos(theta) of inner arm
         Q[2, 2] = 0   # sin(theta) of outer arm
         Q[3, 3] = 0   # sin(theta) of inner arm
-        Q[4, 4] = 6e2   # distance between ball and fingertip - X axis
-        Q[5, 5] = 6e2   # distance between ball and fingertip - Y axis
+        Q[4, 4] = 2e2   # distance between ball and fingertip - X axis
+        Q[5, 5] = 2e2   # distance between ball and fingertip - Y axis
         Q[6, 6] = 5e1   # velocity of inner arm
         Q[7, 7] = 5e1   # velocity of outer arm
         #Q = self.setQ()

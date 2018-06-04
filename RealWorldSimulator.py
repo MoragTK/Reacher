@@ -68,11 +68,11 @@ class RealWorldSimulator:
 
     # Resets the simulator state (in case of exception)
     def reset(self):  # TODO: Check return value dimensions
-        while True:
-            self.observation = self.env.reset()  # reset the system to a new state
-            if (self.observation[9]/0.21)<-0.5:# and (self.observation[9]/0.21)>-0.5:
+        #while True:
+        self.observation = self.env.reset()  # reset the system to a new state
+            #if (self.observation[9]/0.21)<-0.5:# and (self.observation[9]/0.21)>-0.5:
                 #if (self.observation[8] / 0.21) < 0.5 and (self.observation[8] / 0.21) > -0.5:
-                break
+                #break
         self.deriveXnFromObservation()
 
     # Derives the state parameters that are relevant to our program from the current observation tensor.
@@ -83,8 +83,8 @@ class RealWorldSimulator:
         self.xk[3] = np.copy(self.observation[3])           # sin(Theta) of outer arm
         self.xk[4] = np.copy(self.observation[4]) / 0.21    # fingertip location x
         self.xk[5] = np.copy(self.observation[5]) / 0.21    # fingertip location y
-        self.xk[6] = np.copy(self.observation[6]) / 180     # v1 (Angular Velocity of inner arm)
-        self.xk[7] = np.copy(self.observation[7]) / 180     # v2 (Angular Velocity of outer arm)
+        self.xk[6] = np.copy(self.observation[6]) / 200     # v1 (Angular Velocity of inner arm)
+        self.xk[7] = np.copy(self.observation[7]) / 200     # v2 (Angular Velocity of outer arm)
         self.ball[0] = np.copy(self.observation[8]) / 0.21  # ball location x
         self.ball[1] = np.copy(self.observation[9]) / 0.21  # ball location y
         # TODO: do a sanity check that for a certain observation, the values make sense
