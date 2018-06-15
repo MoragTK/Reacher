@@ -9,8 +9,21 @@ username = getpass.getuser()
 figPath = '/home/' + username + '/PycharmProjects/Reacher/Figures/'
 
 
-class PlotData:
+'''
 
+This class is responsible for all plotting of the data.
+It plots 4 graphs:
+
+    1. Model's Training Error  
+    2. Model's Online Error
+    3. Planned Trajectory
+    4. Cost of planned trajectory in the current step
+
+'''
+
+class DataPlotter:
+
+    # Constructor
     def __init__(self):
 
         self.frameNumber = "%08d" % 0
@@ -25,33 +38,30 @@ class PlotData:
         self.onlineErrHistory = []
         self.ltiErrHistory = []
         self.costHistory = []
-        self.trajectory = self.fig.add_subplot(2, 2, 1)
-        self.tempTrajectory = self.fig.add_subplot(2, 2, 2)
-        #self.trainErrGraph = self.fig.add_subplot(2, 2, 3)
+        self.trajectoryGraph = self.fig.add_subplot(2, 2, 1)
+        self.trainErrGraph = self.fig.add_subplot(2, 2, 2)
         self.onlineErrGraph = self.fig.add_subplot(2, 2, 3)
-        #self.ltiErrGraph = self.fig.add_subplot(2, 2, 4)
         self.costGraph = self.fig.add_subplot(2, 2, 4)
+        #self.ltiErrGraph = self.fig.add_subplot(2, 2, 4)
 
-
-
-
+    # Updates the planned trajectory graph.
     def updateTrajectoryState(self, X, ball, step, action):
-        self.trajectory.cla()
+        self.trajectoryGraph.cla()
         xLocations = X[:, 4]
         yLocations = X[:, 5]
-        self.trajectory.set_title("Planned Trajectory", loc="left")
-        self.trajectory.plot(xLocations, yLocations, '.-')
-        self.trajectory.set_xlim(-1.1, 1.1)
-        self.trajectory.set_ylim(-1.1, 1.1)
-        self.trajectory.plot(ball[0], ball[1], 'go')
-        self.trajectory.text(ball[0], ball[1], 'ball')
-        self.trajectory.plot(X[0, 4], X[0, 5], 'ro')
-        self.trajectory.text(X[0, 4], X[0, 5], 'start')
-        self.trajectory.plot(X[-1, 4], X[-1, 5], 'ro')
-        self.trajectory.text(X[-1, 4], X[-1, 5], 'End')
-        #self.trajectory.text(0.15, 0.12, "Uk: {}".format(action))
+        self.trajectoryGraph.set_title("Planned Trajectory", loc="left")
+        self.trajectoryGraph.plot(xLocations, yLocations, '.-')
+        self.trajectoryGraph.set_xlim(-1.1, 1.1)
+        self.trajectoryGraph.set_ylim(-1.1, 1.1)
+        self.trajectoryGraph.plot(ball[0], ball[1], 'go')
+        self.trajectoryGraph.text(ball[0], ball[1], 'ball')
+        self.trajectoryGraph.plot(X[0, 4], X[0, 5], 'ro')
+        self.trajectoryGraph.text(X[0, 4], X[0, 5], 'start')
+        self.trajectoryGraph.plot(X[-1, 4], X[-1, 5], 'ro')
+        self.trajectoryGraph.text(X[-1, 4], X[-1, 5], 'End')
         self.frameNumber = "%08d" % step
 
+    # Updates the model's training errors history graph.
     def updateTrainingHistory(self, newData):
         self.trainErrGraph.cla()
         self.trainErrHistory = self.trainErrHistory + newData
@@ -64,6 +74,7 @@ class PlotData:
         self.trainErrGraph.set_xlabel('Epoch')
         self.trainErrGraph.set_ylabel('MSE Error')
 
+    # Updates the model's online errors history graph.
     def updateOnlineHistory(self, newData):
         self.onlineErrGraph.cla()
         self.onlineErrHistory.append(newData)
@@ -73,21 +84,10 @@ class PlotData:
         self.onlineErrGraph.set_yscale("log", nonposy='clip')
         self.onlineErrGraph.set_ylim(bottom=10**-7, top=1)
         self.onlineErrGraph.set_title('Online Error History', loc="right")
-        #self.onlineErrGraph.set_xlabel('Step')
+        self.onlineErrGraph.set_xlabel('Step')
         self.onlineErrGraph.set_ylabel('MSE Error')
 
-    def updateLTIHistory(self, newData):
-        self.ltiErrGraph.cla()
-        self.ltiErrHistory.append(newData)
-        X = range(len(np.asarray(self.ltiErrHistory)))
-        Y = np.asarray(self.ltiErrHistory)
-        self.ltiErrGraph.plot(X, Y, '.-')
-        self.ltiErrGraph.set_yscale("log", nonposy='clip')
-        self.ltiErrGraph.set_ylim(bottom=10**-7, top=1)
-        self.ltiErrGraph.set_title('LTI Error History', loc="right")
-        self.ltiErrGraph.set_xlabel('Step')
-        self.ltiErrGraph.set_ylabel('MSE Error')
-
+    # Updates the planned trajectory's cost graph.
     def updateCostHistory(self, newData):
         self.costGraph.cla()
         self.costHistory.append(newData)
@@ -97,36 +97,30 @@ class PlotData:
         #self.costGraph.set_yscale("log", nonposy='clip')
         #self.costGraph.set_ylim(bottom=10 ** -7, top=1)
         self.costGraph.set_title('Cost History', loc="right")
-        self.onlineErrGraph.set_xlabel('Step')
+        self.costGraph.set_xlabel('Step')
         self.costGraph.set_ylabel('Cost')
 
-
-    def updateTempTrajectoryState(self, X, ball, itr, cost):
-        self.tempTrajectory.cla()
-        xLocations = X[:, 4]
-        yLocations = X[:, 5]
-        self.tempTrajectory.set_title("Temp Trajectory. Cost: {}".format(cost), loc="left")
-        self.tempTrajectory.plot(xLocations, yLocations, '.-')
-        self.tempTrajectory.set_xlim(-1.1, 1.1)
-        self.tempTrajectory.set_ylim(-1.1, 1.1)
-        self.tempTrajectory.plot(ball[0], ball[1], 'go')
-        self.tempTrajectory.text(ball[0], ball[1], 'ball')
-        self.tempTrajectory.plot(X[0, 4], X[0, 5], 'ro')
-        self.tempTrajectory.text(X[0, 4], X[0, 5], 'start')
-        self.tempTrajectory.plot(X[-1, 4], X[-1, 5], 'ro')
-        self.tempTrajectory.text(X[-1, 4], X[-1, 5], 'End')
-        #self.tempTrajectory.text(0.15, 0.12, "Uk: {}".format(action))
-        #self.frameNumber = "%08d" % itr
-
-
-
+    # When called, plots all graphs, and saves them to a png file (Later all images can be turned into a gif)
     def plot(self):
-        #plt.pause(2)
-        #plt.savefig(figPath + self.frameNumber)
+        plt.savefig(figPath + self.frameNumber)
         self.fig.canvas.draw()
 
+    # Resets all graphs and the frame number.
     def reset(self):
         self.trainErrHistory = []
         self.onlineErrHistory = []
         self.ltiErrHistory = []
         self.frameNumber = "%08d" % 0
+
+    # An older graph plotting function that we used to verify the state space matrices A,B.
+    '''def updateLTIHistory(self, newData):
+        self.ltiErrGraph.cla()
+        self.ltiErrHistory.append(newData)
+        X = range(len(np.asarray(self.ltiErrHistory)))
+        Y = np.asarray(self.ltiErrHistory)
+        self.ltiErrGraph.plot(X, Y, '.-')
+        self.ltiErrGraph.set_yscale("log", nonposy='clip')
+        self.ltiErrGraph.set_ylim(bottom=10**-7, top=1)
+        self.ltiErrGraph.set_title('LTI Error History', loc="right")
+        self.ltiErrGraph.set_xlabel('Step')
+        self.ltiErrGraph.set_ylabel('MSE Error')'''

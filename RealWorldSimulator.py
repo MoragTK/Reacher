@@ -5,7 +5,11 @@ import getpass
 # Username for storing and loading purposes
 username = getpass.getuser()
 
-''' Definitions:
+'''
+    This class is the interface between our program and the OpenAI Simulator 
+    for the "Reacher" environment.
+    
+    Definitions:
 
     Xk tensor includes:  
         1. cos(Theta) of inner arm
@@ -22,13 +26,11 @@ username = getpass.getuser()
         1. moment acted on inner arm
         2. moment acted on outer arm
 
-    ball tensor includes:
-        1. x location
-        2. y location
+    Ball tensor includes:
+        1. x location of the ball
+        2. y location of the ball
 '''
 
-
-# This class is the interface between our program and the OpenAI Simulator for the "Reacher" environment
 
 class RealWorldSimulator:
 
@@ -58,7 +60,7 @@ class RealWorldSimulator:
             self.deriveXnFromObservation()
             dataBase.append(xk_uk_input, self.getXk())
 
-    # Performs the action uk on the current state and returns the next state.
+    # Performs the action u[k] on the current state (x[k]) and returns the next state (x[k+1]).
     def actUk(self, uk):
         self.uk = uk
         self.observation, reward, done, info = self.env.step(self.uk)
@@ -68,14 +70,11 @@ class RealWorldSimulator:
 
     # Resets the simulator state (in case of exception)
     def reset(self):  # TODO: Check return value dimensions
-        #while True:
         self.observation = self.env.reset()  # reset the system to a new state
-            #if (self.observation[9]/0.21)<-0.5:# and (self.observation[9]/0.21)>-0.5:
-                #if (self.observation[8] / 0.21) < 0.5 and (self.observation[8] / 0.21) > -0.5:
-                #break
         self.deriveXnFromObservation()
 
     # Derives the state parameters that are relevant to our program from the current observation tensor.
+    # this is done to make sure the values are up to date whenever we want to use them.
     def deriveXnFromObservation(self):
         self.xk[0] = np.copy(self.observation[0])           # cos(Theta) of inner arm
         self.xk[1] = np.copy(self.observation[1])           # cos(Theta) of outer arm
@@ -87,34 +86,24 @@ class RealWorldSimulator:
         self.xk[7] = np.copy(self.observation[7]) / 200     # v2 (Angular Velocity of outer arm)
         self.ball[0] = np.copy(self.observation[8]) / 0.21  # ball location x
         self.ball[1] = np.copy(self.observation[9]) / 0.21  # ball location y
-        # TODO: do a sanity check that for a certain observation, the values make sense
 
+    # Returns current state x[k]
     def getXk(self):
         return np.reshape(np.copy(self.xk), (self.xDim, 1))
 
+    # Returns the last action performed - u[k]
     def getUk(self):
         return np.reshape(np.copy(self.uk), (self.uDim, 1))
 
+    # returns the location of the ball.
     def getBall(self):
         return np.copy(self.ball)
 
+    # starts up a GUI with the simulation of the board, arm and ball.
     def simulate(self):
         self.env.render()
 
-    def printState(self):
-        print "Ball    (X,Y) : ({},{})".format(self.ball[0], self.ball[1])
-        print "Reacher (X,Y) : ({},{})".format(self.xk[4], self.xk[5])
-
-    # print "Velocity 1: {}".format(self.xk[6])
-    # print "Velocity 2: {}".format(self.xk[7])
-
-    def randomActionVector(self, n):
-        U = np.zeros((n, self.uDim))
-        for i in range(n):
-            U[i] = self.env.action_space.sample()
-        return U
-
-    def distance(self):
+    '''def distance(self):
         from math import sqrt
         dis = sqrt(((abs(self.xk[4] - self.ball[0])) ** 2) + ((abs(self.xk[5] - self.ball[1])) ** 2))
-        return dis
+        return dis'''

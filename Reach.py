@@ -1,7 +1,7 @@
 from RealWorldSimulator import RealWorldSimulator
 from Emulator import Emulator
 from DataSet import DataSet
-from PlotData import PlotData
+from DataPlotter import DataPlotter
 from Controller import Controller
 import numpy as np
 import time
@@ -13,24 +13,27 @@ username = getpass.getuser()
 modelDir = '/home/' + username + '/PycharmProjects/Reacher/Networks/'
 list_of_files = glob.glob(modelDir + "*")  # * means all if need specific format then *.csv
 latest_file = max(list_of_files, key=os.path.getctime)
-print latest_file
+print "Using Latest network: {}".format(latest_file)
 
-# Algorithm main building blocks
-db = DataSet(size=10000)               # Initializing an empty data base
-plotter = PlotData()
-simulator = RealWorldSimulator()        # Initialize the RealWorldSimulator
-emulator = Emulator(db, plotter, new=False, filePath=latest_file)               # Initialize emulator
+
+'''Initialize all the algorithms classes'''
+
+db = DataSet(size=10000)
+plotter = DataPlotter()
+simulator = RealWorldSimulator()
+# Initialize the emulator. The 'new' parameter determines whether we're
+# starting a completely new network or training on an existing one.
+emulator = Emulator(db, plotter, new=False, filePath=latest_file)
 controller = Controller(emulator, simulator, plotter)   # Initialize Controller
 
 
-# Mode
-states = ('INITIALIZE', 'TRAIN', 'RUN')
+# Modes
+states = ('INITIALIZE', 'RUN')
 # Choose state HERE:
-state = states[1]
+state = states[0]
 
 if state == 'INITIALIZE':
-    #emulator.restoreModel()
-    # Train model with available samples in the data base.
+    # In this state, the model is trained with random samples from data base.
     start = time.time()
     t = time.time()
     #while time.time() < start + (5 * 60):
@@ -56,19 +59,21 @@ if state == 'INITIALIZE':
     state = states[1]
 
 simulator.reset()
-if state == 'TRAIN':
-    # In this state, the algorithm performs both ANN Training alongside LQR Control.
+
+if state == 'RUN':
+    # In this state, the algorithm uses the learned model and
+    # performs iLQR Control in order to get the arm to reach the ball.
 
     start = time.time()
     t1 = start  # For resetting the environment
     t2 = start  # For saving the model
-    t3 = start  # For generating random samples
-    sampleGroupSize = 40
+
+    sampleGroupSize = 100
     samplesAdded = 0
     enoughSamples = False
     simulator.reset()
+
     while True:
-        #print "Sampled added : {}".format(samplesAdded)
         if enoughSamples is True:
             if samplesAdded >= sampleGroupSize:
                 emulator.train()
@@ -90,20 +95,15 @@ if state == 'TRAIN':
         if samplesAdded == 1000:
             enoughSamples = True
 
+        # Every 30 seconds, the ball changes location.
         if time.time() > t1 + (30):
             simulator.reset()
             t1 = time.time()
             plotter.reset()
 
+        # Every 30 minutes, the model is saved with a time stamp.
         if time.time() > t2 + (30 * 60):
             d = time.gmtime()
             time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
             emulator.saveModel(modelDir + "emulator_" + time_stamp)
             t2 = time.time()
-
-
-
-'''
-else state == 'RUN':
-    print "Nothing now, predictions later"
-'''

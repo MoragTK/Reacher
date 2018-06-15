@@ -1,9 +1,19 @@
 import numpy as np
-from Auxilary import xMx, constrained,StopArm
+from Auxilary import xMx, constrained, StopArm
 from sklearn.metrics import mean_squared_error as mse
+
+
+''' 
+    This class implements all Control related functions in the Algorithm, 
+    starting from the function "CalculateNextAction" which receives the current 
+    state, calculates an ideal trajectory X (according to an ideal sequence U) using 
+    the iLQR algorithm, and returns only the first step from it - U[0] as the next action.
+'''
+
 
 class Controller:
 
+    # Constructor
     def __init__(self, model, simulator, plotter):
         self.xDim = 8
         self.uDim = 2
@@ -26,7 +36,7 @@ class Controller:
         self.prevCost = 10000
 
 
-    # Calculate next step using the iLQR algorithm
+    # Calculate next step (using the iLQR algorithm)
     def calculateNextAction(self, x0):
         if self.ball[0] != self.simulator.getBall()[0] or self.ball[1] != self.simulator.getBall()[1]:
             self.reset()
@@ -45,7 +55,7 @@ class Controller:
 
         return nextAction
 
-
+    # This function is the implementation of the iLQR algorithm.
     def ilqr(self, x0, U=None):
         """ use iterative linear quadratic regulation to find a control
         sequence that minimizes the cost function
@@ -64,7 +74,6 @@ class Controller:
         for ii in range(self.maxIter):
 
             if sim_new_trajectory == True:
-                #X, cost = self.calculateTrajectory(x0, U) #TODO: return if needed!!
 
                 f_x = np.zeros((tN, self.xDim, self.xDim))  # df / dx
                 f_u = np.zeros((tN, self.xDim, self.uDim))  # df / du
@@ -82,7 +91,6 @@ class Controller:
                 l[-1], l_x[-1], l_xx[-1] = self.finalCost(X[-1])
                 ##print "l sum: {}".format(l.sum())
                 sim_new_trajectory = False
-            ##print "I'm here! {}".format(t)
 
             # optimize things!
             # initialize Vs with final state cost and set up k, K
@@ -121,9 +129,7 @@ class Controller:
                 Q_uu_evals, Q_uu_evecs = np.linalg.eig(Q_uu)
                 Q_uu_evals[Q_uu_evals < 0] = 0.0
                 Q_uu_evals += lamb
-                ##print "Q_uu_evals: {}".format(Q_uu_evals) #TODO: Check lambda's scale
                 Q_uu_inv = np.dot(Q_uu_evecs, np.dot(np.diag(1.0 / Q_uu_evals), Q_uu_evecs.T))
-                #Q_uu_inv=inv(Q_uu)
                 # 5b) k = -np.dot(Q_uu^-1, Q_u)
                 k[t] = -np.dot(Q_uu_inv, Q_u)
                 # 5b) K = -np.dot(Q_uu^-1, Q_ux)
@@ -150,52 +156,35 @@ class Controller:
                 xnew = self.plantDynamics(xnew, Unew[t])  # 7c)
 
             # evaluate the new trajectory
-            ##print "Calling from Unew:"
-
             Xnew, newCost = self.calculateTrajectory(x0, Unew)
-            #print "Unew Cost: {}".format(newCost)
+
             # Levenberg-Marquardt heuristic
             if newCost < cost:
-                #print "newCost is lower!"
                 # decrease lambda (get closer to Newton's method)
                 lamb /= self.lambFactor
 
                 X = np.copy(Xnew)  # update trajectory
                 U = np.copy(Unew)  # update control signal
-                ##print "The Unew is: {}".format(U)
                 oldCost = np.copy(cost)
                 cost = np.copy(newCost)
                 sim_new_trajectory = True  # do another rollout
-
-                # #print("iteration = %d; Cost = %.4f;"%(ii, newCost) +
-                #         " logLambda = %.1f"%np.log(lamb))
                 # check to see if update is small enough to exit
                 if ii > 0 and ((abs(oldCost - cost) / cost) < self.threshold):
-                    ##print "Under threshold!"
-                    ##print("Converged at iteration = %d; Cost = %.4f;" % (ii, newCost) +
-                    #      " logLambda = %.1f" % np.log(lamb))
                     break
 
             else:
                 # increase lambda (get closer to gradient descent)
                 lamb *= self.lambFactor
-                # #print("cost: %.4f, increasing lambda to %.4f")%(cost, lamb)
                 if lamb > self.lambMax:
-                    #print "Lambda is bigger than max"
-                    ##print("lambda > max_lambda at iteration = %d;" % ii +
-                     #     " Cost = %.4f; logLambda = %.1f" % (cost,np.log(lamb)))
                     break
 
-            #print "{}. Cost: {}, alpha: {}".format(ii, newCost[0],alpha)
-            alpha *=0.7#cost/4000
-            ##print "{}. cost: {}".format(ii, cost)
-           # self.plotter.updateTempTrajectoryState(X, self.simulator.getBall(), ii, cost)
-           # self.plotter.plot()
+            alpha *=0.7
 
         return X, U, cost
 
 
-    #TODO
+    # Calculates a trajectory starting from the current state x0 with the sequence of actions U performed on each step.
+    # Returned the planned trajectory X and its cost.
     def calculateTrajectory(self, x0, U):
         """ do a rollout of the system, starting at x0 and
                 applying the control sequence U
@@ -268,7 +257,7 @@ class Controller:
         x_ = np.reshape(np.copy(x), (self.xDim, 1))
         u_ = np.reshape(np.copy(u), (self.uDim, 1))
         xk1 = self.model.predict(x_, u_)
-        A, B = self.model.deriveAB(x, u)
+        A, B = self.model.deriveModel(x, u)
 
         return A, B
 
