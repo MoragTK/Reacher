@@ -45,11 +45,14 @@ class DataPlotter:
         #self.ltiErrGraph = self.fig.add_subplot(2, 2, 4)
 
     # Updates the planned trajectory graph.
-    def updateTrajectoryState(self, X, ball, step, action):
+    def updateTrajectoryState(self, X, ball, step, N, evaluate):
         self.trajectoryGraph.cla()
         xLocations = X[:, 4]
         yLocations = X[:, 5]
-        self.trajectoryGraph.set_title("Planned Trajectory", loc="left")
+        title = "Planned Trajectory, Step {} of {}. ".format(step, N)
+        if evaluate is True:
+            title = title + "(Evaluating)"
+        self.trajectoryGraph.set_title(title, loc="left")
         self.trajectoryGraph.plot(xLocations, yLocations, '.-')
         self.trajectoryGraph.set_xlim(-1.1, 1.1)
         self.trajectoryGraph.set_ylim(-1.1, 1.1)
@@ -97,7 +100,7 @@ class DataPlotter:
         #self.costGraph.set_yscale("log", nonposy='clip')
         #self.costGraph.set_ylim(bottom=10 ** -7, top=1)
         self.costGraph.set_title('Cost History', loc="right")
-        self.costGraph.set_xlabel('Step')
+        self.costGraph.set_xlabel('Episode')
         self.costGraph.set_ylabel('Cost')
 
     # When called, plots all graphs, and saves them to a png file (Later all images can be turned into a gif)

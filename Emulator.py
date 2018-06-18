@@ -20,13 +20,10 @@ modelDir = '/home/' + username + '/PycharmProjects/Reacher/Networks/'
 class Emulator:
 
     # Constructor
-    def __init__(self, dataBase, plotter, new=False, filePath=''):
+    def __init__(self, dataBase, new=False, filePath=''):
         self.xDim = 8
         self.uDim = 2
         self.db = dataBase
-        self.plotter = plotter
-
-        self.minTrainError = 100
 
         if new:
             self.model = Sequential()
@@ -57,8 +54,7 @@ class Emulator:
     def train(self):
         trainIn, trainOut = self.db.getAll()
         history = self.model.fit(trainIn, trainOut, batch_size=64, epochs=50, verbose=0, validation_split=0)
-        self.plotter.updateTrainingHistory(history.history['loss'])
-        self.minTrainError = min(history.history['loss'])
+        return history.history['loss']
 
     # Receives the networks input - current state x[k] and action u[k], and predicts the next state x[k+1]
     def predict(self, xk, uk):
@@ -83,7 +79,7 @@ class Emulator:
         xuk = np.hstack((xk_, uk_))
         target = np.reshape(np.copy(xk1), (1, self.xDim))
         err = self.model.evaluate(x=xuk, y=target, batch_size=64, verbose=0)
-        self.plotter.updateOnlineHistory(err)
+        return err
 
     # Derives the model (Partial derivative) according to the inputs x[k] and u[k].
     def deriveModel(self, xk, uk):

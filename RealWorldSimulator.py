@@ -44,10 +44,10 @@ class RealWorldSimulator:
         self.ball = np.zeros(self.uDim)  # ball location
 
         # Initialize environment
-        self.env = gym.make('Reacher-v1')
+        self.env = gym.make('ReacherRandomBall-v0')
         self.observation = np.array(self.env.reset())
         self.deriveXnFromObservation()
-        self.ball[0] = self.observation[8]  # TODO: check the indices
+        self.ball[0] = self.observation[8]
         self.ball[1] = self.observation[9]
 
     # Generates random samples for the initial data set.
@@ -69,9 +69,25 @@ class RealWorldSimulator:
         return self.getXk()
 
     # Resets the simulator state (in case of exception)
-    def reset(self):  # TODO: Check return value dimensions
+    def reset(self, ballLocation):  # TODO: Check return value dimensions
+
+        if ballLocation == 'Random':
+            self.env = gym.make('ReacherRandomBall-v0')
+
+        elif ballLocation == 'Halfway':
+            self.env = gym.make('ReacherHalfwayBall-v0')
+
+        elif ballLocation == 'Far':
+            self.env = gym.make('ReacherFarBall-v0')
+
+        elif ballLocation == 'Center':
+            self.env = gym.make('ReacherCenterBall-v0')
+
         self.observation = self.env.reset()  # reset the system to a new state
         self.deriveXnFromObservation()
+
+
+
 
     # Derives the state parameters that are relevant to our program from the current observation tensor.
     # this is done to make sure the values are up to date whenever we want to use them.

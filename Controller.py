@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error as mse
 class Controller:
 
     # Constructor
-    def __init__(self, model, simulator, plotter):
+    def __init__(self, model, simulator):
         self.xDim = 8
         self.uDim = 2
         self.R = self.setR()
@@ -29,7 +29,6 @@ class Controller:
         self.lambMax = 100000
         self.lambFactor = 1.2
         self.simulator = simulator
-        self.plotter = plotter
         self.ball = np.copy(self.simulator.getBall())
         self.U = np.random.random((self.numOfSteps,self.uDim))
         self.X = np.zeros((self.numOfSteps, self.xDim))
@@ -48,12 +47,7 @@ class Controller:
         self.X, self.U, cost = self.ilqr(x0, U)
         nextAction = self.U[0]
 
-        # Plotting trajectory
-        self.plotter.updateTrajectoryState(self.X, self.simulator.getBall(), self.t, nextAction)
-        self.plotter.updateCostHistory(cost[0])
-
-
-        return nextAction
+        return nextAction, self.X
 
     # This function is the implementation of the iLQR algorithm.
     def ilqr(self, x0, U=None):
