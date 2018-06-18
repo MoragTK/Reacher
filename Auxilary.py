@@ -65,6 +65,14 @@ def evaluateLTIError(controller, xk, uk, xk1):
     print ltiErr
 
 
+def epsilonGreedy(prob=0.9):
+    rand = np.random.rand()
+    if rand < prob:
+        return True
+    else:
+        return False
+
+
 
 
 

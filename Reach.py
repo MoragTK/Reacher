@@ -3,6 +3,7 @@ from Emulator import Emulator
 from DataSet import DataSet
 from DataPlotter import DataPlotter
 from ResultsPlotter import ResultsPlotter
+from Auxilary import epsilonGreedy
 from Controller import Controller
 import numpy as np
 import time
@@ -51,7 +52,13 @@ def runEpisode(reps=1, evaluate=False, ballLocation='Random'):
 
         for step in range(episodeLength):
             xk = simulator.getXk()
-            uk, trajectory = controller.calculateNextAction(xk)
+
+            # if evaluating, do not explore. if not evaluating, explore with probability of 1-prob
+            if evaluate or epsilonGreedy(prob=0.9):
+                uk, trajectory = controller.calculateNextAction(xk)
+            else:
+                uk = simulator.generateRandomAction()
+
             #plotter.updateTrajectoryState(trajectory, simulator.getBall(), step, episodeLength, evaluate)
             #plotter.updateCostHistory(...)    
             #plotter.plot()
@@ -90,6 +97,7 @@ for episode in range(episodes):
     resultsPlotter.updateHalfwayCostHistory(halfwayCost)
     resultsPlotter.updateFarCostHistory(farCost)
     resultsPlotter.updateCenterCostHistory(centerCost)
+    resultsPlotter.plot()
 
     # Train the emulator with new data.
     if episode % 2 == 0:

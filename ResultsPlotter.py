@@ -47,19 +47,10 @@ class ResultsPlotter:
         X = range(len(np.asarray(self.halfwayCostHistory)))
         Y = np.asarray(self.halfwayCostHistory)
         self.halfwayCostGraph.plot(X, Y, '.-')
-        self.halfwayCostGraph.set_title('Scenario I', loc="right")
+        self.halfwayCostGraph.set_title('Scenario I', loc="left")
         self.halfwayCostGraph.set_xlabel('Episode')
         self.halfwayCostGraph.set_ylabel('Cost')
 
-    def updateFarCostHistory(self, newData):
-        self.farCostGraph.cla()
-        self.farCostHistory.append(newData)
-        X = range(len(np.asarray(self.farCostHistory)))
-        Y = np.asarray(self.farCostHistory)
-        self.farCostGraph.plot(X, Y, '.-')
-        self.farCostGraph.set_title('Scenario II', loc="right")
-        self.farCostGraph.set_xlabel('Episode')
-        self.farCostGraph.set_ylabel('Cost')
 
     # Updates the planned trajectory's cost graph.
     def updateCenterCostHistory(self, newData):
@@ -68,9 +59,19 @@ class ResultsPlotter:
         X = range(len(np.asarray(self.centerCostHistory)))
         Y = np.asarray(self.centerCostHistory)
         self.centerCostGraph.plot(X, Y, '.-')
-        self.centerCostGraph.set_title('Scenario III', loc="right")
+        self.centerCostGraph.set_title('Scenario II', loc="left")
         self.centerCostGraph.set_xlabel('Episode')
         self.centerCostGraph.set_ylabel('Cost')
+
+    def updateFarCostHistory(self, newData):
+        self.farCostGraph.cla()
+        self.farCostHistory.append(newData)
+        X = range(len(np.asarray(self.farCostHistory)))
+        Y = np.asarray(self.farCostHistory)
+        self.farCostGraph.plot(X, Y, '.-')
+        self.farCostGraph.set_title('Scenario III', loc="left")
+        self.farCostGraph.set_xlabel('Episode')
+        self.farCostGraph.set_ylabel('Cost')
 
     # When called, plots all graphs, and saves them to a png file (Later all images can be turned into a gif)
     def plot(self):

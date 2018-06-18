@@ -60,6 +60,12 @@ class RealWorldSimulator:
             self.deriveXnFromObservation()
             dataBase.append(xk_uk_input, self.getXk())
 
+    # Generate a random action for the purpose of exploration.
+    def generateRandomAction(self):
+        self.uk = self.env.action_space.sample()
+        return self.uk
+
+
     # Performs the action u[k] on the current state (x[k]) and returns the next state (x[k+1]).
     def actUk(self, uk):
         self.uk = uk
