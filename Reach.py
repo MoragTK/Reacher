@@ -6,7 +6,6 @@ from ResultsPlotter import ResultsPlotter
 from Auxilary import epsilonGreedy
 from Controller import Controller
 import numpy as np
-import time
 import getpass
 import glob
 import os
@@ -19,8 +18,8 @@ print "Using Latest network: {}".format(latest_file)
 
 # Episode: a period of time that it's length is a constant number of steps defined below.
 episodes = 1000
-episodeLength = 20
-evalReps = 5
+episodeLength = 25
+evalReps = 4
 
 
 
@@ -42,7 +41,7 @@ emulator.train()
 #plotter.plot()
 
 
-def runEpisode(reps=1, evaluate=False, ballLocation='Random'):
+def runEpisode(reps=1, evaluate=False, ballLocation='Random', prob=1):
     costArray = np.zeros(reps)
 
     for rep in range(reps):
@@ -54,7 +53,7 @@ def runEpisode(reps=1, evaluate=False, ballLocation='Random'):
             xk = simulator.getXk()
 
             # if evaluating, do not explore. if not evaluating, explore with probability of 1-prob
-            if evaluate or epsilonGreedy(prob=0.9):
+            if epsilonGreedy(prob=prob):
                 uk, trajectory = controller.calculateNextAction(xk)
             else:
                 uk = simulator.generateRandomAction()
@@ -67,12 +66,13 @@ def runEpisode(reps=1, evaluate=False, ballLocation='Random'):
             xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
             xk1 = simulator.actUk(uk)
 
-            err = emulator.evaluatePredictionError(xk, uk, xk1)
+            #err = emulator.evaluatePredictionError(xk, uk, xk1)
             #plotter.updateOnlineHistory(err)
             #plotter.plot()
-            
-            
-            simulator.simulate()
+
+            #if rep == 1 and evaluate is True: #Simulate only one rep in each scenario
+                #simulator.simulate()
+
             if evaluate is False:
                 db.append(xk_uk, xk1)
             else:
@@ -84,65 +84,45 @@ def runEpisode(reps=1, evaluate=False, ballLocation='Random'):
 
 # In this state, the algorithm uses the learned model and
 # performs iLQR Control in order to get the arm to reach the ball.
-for episode in range(episodes):
+halfwayCost = []
+farCost = []
+centerCost = []
 
+for episode in range(episodes):
+    print "Episode: {}".format(episode)
     # Run a regular episode. the data that is generated is saved in the samples buffer.
-    runEpisode()
+
+    if episode < 10:
+        p = 0.3
+    elif (episode > 50 and episode < 100):
+        p = 0.7
+    else:
+        p = 0.9
+
+    runEpisode(prob=p)
+
 
     # Run an evaluation episode, to obtain the current cost. No samples are saved.
-    halfwayCost = runEpisode(reps=evalReps, evaluate=True, ballLocation='Halfway')
-    farCost = runEpisode(reps=evalReps, evaluate=True, ballLocation='Far')
-    centerCost = runEpisode(reps=evalReps, evaluate=True, ballLocation='Center')
+    halfwayCost.append(runEpisode(reps=evalReps, evaluate=True, ballLocation='Halfway', prob=1))
+    farCost.append(runEpisode(reps=evalReps, evaluate=True, ballLocation='Far', prob=1))
+    centerCost.append(runEpisode(reps=evalReps, evaluate=True, ballLocation='Center', prob=1))
 
-    resultsPlotter.updateHalfwayCostHistory(halfwayCost)
-    resultsPlotter.updateFarCostHistory(farCost)
-    resultsPlotter.updateCenterCostHistory(centerCost)
-    resultsPlotter.plot()
+    #resultsPlotter.updateHalfwayCostHistory(halfwayCost)
+    #resultsPlotter.updateFarCostHistory(farCost)
+    #resultsPlotter.updateCenterCostHistory(centerCost)
+    #resultsPlotter.plot()
 
     # Train the emulator with new data.
-    if episode % 2 == 0:
+    if episode % 5 == 0:
         trainingErr = emulator.train()
         #plotter.updateTrainingHistory(trainingErr)
         #plotter.plot()
+        #resultsPlotter.saveGraphs("progress")
 
+resultsPlotter.updateHalfwayCostHistory(halfwayCost)
+resultsPlotter.updateFarCostHistory(farCost)
+resultsPlotter.updateCenterCostHistory(centerCost)
+resultsPlotter.plot()
 
-resultsPlotter.saveGraphs("Try")
+resultsPlotter.saveGraphs("Final")
 
-
-
-
-
-
-
-
-'''start = time.time()
-t1 = start  # For resetting the environment
-t2 = start  # For saving the model
-
-sampleGroupSize = 100
-samplesAdded = 0
-enoughSamples = False
-
-while True:
-if enoughSamples is True:
-    if samplesAdded >= sampleGroupSize:
-        emulator.train()
-        samplesAdded = 0
-
-samplesAdded += 1
-
-if samplesAdded == 1000:
-    enoughSamples = True
-
-# Every 30 seconds, the ball changes location.
-if time.time() > t1 + (30):
-    simulator.reset()
-    t1 = time.time()
-    plotter.reset()
-
-# Every 30 minutes, the model is saved with a time stamp.
-if time.time() > t2 + (30 * 60):
-    d = time.gmtime()
-    time_stamp = str(d[2]) + "." + str(d[1]) + "-" + str(d[3] + 2) + "-" + str(d[4])
-    emulator.saveModel(modelDir + "emulator_" + time_stamp)
-    t2 = time.time()'''
