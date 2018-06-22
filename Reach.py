@@ -70,8 +70,8 @@ def runEpisode(reps=1, evaluate=False, ballLocation='Random', prob=1):
             #plotter.updateOnlineHistory(err)
             #plotter.plot()
 
-            if rep == 0 and evaluate is True: #Simulate only one rep in each scenario
-                simulator.simulate()
+            #if rep == 0 and evaluate is True: #Simulate only one rep in each scenario
+            #    simulator.simulate()
             if evaluate is False:
                 db.append(xk_uk, xk1)
             else:
@@ -102,31 +102,26 @@ for episode in range(episodes):
 
     runEpisode(prob=p)
 
-
     # Run an evaluation episode, to obtain the current cost. No samples are saved.
     halfwayCost.append(runEpisode(reps=evalReps, evaluate=True, ballLocation='Halfway', prob=1))
     farCost.append(runEpisode(reps=evalReps, evaluate=True, ballLocation='Far', prob=1))
     centerCost.append(runEpisode(reps=evalReps, evaluate=True, ballLocation='Center', prob=1))
 
-    #resultsPlotter.updateHalfwayCostHistory(halfwayCost)
-    #resultsPlotter.updateFarCostHistory(farCost)
-    #resultsPlotter.updateCenterCostHistory(centerCost)
-    #resultsPlotter.plot()
 
-    # Train the emulator with new data.
+    # Train the emulator with new data, update the plots
     if episode % 5 == 0:
         trainingErr = emulator.train()
-        print halfwayCost
-        print farCost
-        print centerCost
+        resultsPlotter.updateHalfwayCostHistory(halfwayCost)
+        resultsPlotter.updateFarCostHistory(farCost)
+        resultsPlotter.updateCenterCostHistory(centerCost)
+        resultsPlotter.plot()
+        resultsPlotter.saveGraphs("Progress")
         #plotter.updateTrainingHistory(trainingErr)
         #plotter.plot()
-        #resultsPlotter.saveGraphs("progress")
 
 resultsPlotter.updateHalfwayCostHistory(halfwayCost)
 resultsPlotter.updateFarCostHistory(farCost)
 resultsPlotter.updateCenterCostHistory(centerCost)
 resultsPlotter.plot()
-
 resultsPlotter.saveGraphs("Final")
 
