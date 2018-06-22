@@ -316,4 +316,4 @@ class Controller:
         return Q
 
     def setR(self):
-        return np.identity(self.uDim)*1e-2
+        return np.identity(self.uDim)*0#1e-2

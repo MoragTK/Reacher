@@ -18,27 +18,27 @@ print "Using Latest network: {}".format(latest_file)
 
 # Episode: a period of time that it's length is a constant number of steps defined below.
 episodes = 1000
-episodeLength = 25
-evalReps = 4
+episodeLength = 20
+evalReps = 1
 
 
 
 '''INITIALIZE'''
 # In this state, the model is initialized by training on random samples from the data-base.
 db = DataSet(size=10000)
-#plotter = DataPlotter()
-resultsPlotter = ResultsPlotter()
+plotter = DataPlotter()
+#resultsPlotter = ResultsPlotter()
 simulator = RealWorldSimulator()
 
 # Initialize the emulator. The 'new' parameter determines whether we're
 # starting a completely new network or training on an existing one.
-emulator = Emulator(db, new=True, filePath=latest_file)
+emulator = Emulator(db, new=False, filePath=latest_file)
 controller = Controller(emulator, simulator)
 
 # Generate random samples for the initial training and insert them to the data set.
 simulator.generateRandomSamples(db.size, db)
 #emulator.train()
-#plotter.plot()
+plotter.plot()
 
 
 def runEpisode(reps=1, evaluate=False, ballLocation='Random', prob=1):
@@ -55,23 +55,21 @@ def runEpisode(reps=1, evaluate=False, ballLocation='Random', prob=1):
             # if evaluating, do not explore. if not evaluating, explore with probability of 1-prob
             if epsilonGreedy(prob=prob):
                 uk, trajectory = controller.calculateNextAction(xk)
+                plotter.updateTrajectoryState(trajectory, simulator.getBall(), step, episodeLength, evaluate)
+                plotter.plot()
             else:
                 uk = simulator.generateRandomAction()
-
-            #plotter.updateTrajectoryState(trajectory, simulator.getBall(), step, episodeLength, evaluate)
-            #plotter.updateCostHistory(...)    
-            #plotter.plot()
 
             uk = np.reshape(uk, (2, 1))
             xk_uk = np.vstack((simulator.getXk(), np.copy(uk)))
             xk1 = simulator.actUk(uk)
 
-            #err = emulator.evaluatePredictionError(xk, uk, xk1)
-            #plotter.updateOnlineHistory(err)
-            #plotter.plot()
+            err = emulator.evaluatePredictionError(xk, uk, xk1)
+            plotter.updateOnlineHistory(err)
+            plotter.plot()
 
-            #if rep == 0 and evaluate is True: #Simulate only one rep in each scenario
-            #    simulator.simulate()
+            if rep == 0 and evaluate is True: #Simulate only one rep in each scenario
+                simulator.simulate()
             if evaluate is False:
                 db.append(xk_uk, xk1)
             else:
@@ -111,17 +109,17 @@ for episode in range(episodes):
     # Train the emulator with new data, update the plots
     if episode % 5 == 0:
         trainingErr = emulator.train()
-        resultsPlotter.updateHalfwayCostHistory(halfwayCost)
+        '''resultsPlotter.updateHalfwayCostHistory(halfwayCost)
         resultsPlotter.updateFarCostHistory(farCost)
         resultsPlotter.updateCenterCostHistory(centerCost)
         resultsPlotter.plot()
-        resultsPlotter.saveGraphs("Progress")
+        resultsPlotter.saveGraphs("Progress")'''
         #plotter.updateTrainingHistory(trainingErr)
         #plotter.plot()
 
-resultsPlotter.updateHalfwayCostHistory(halfwayCost)
+'''resultsPlotter.updateHalfwayCostHistory(halfwayCost)
 resultsPlotter.updateFarCostHistory(farCost)
 resultsPlotter.updateCenterCostHistory(centerCost)
 resultsPlotter.plot()
-resultsPlotter.saveGraphs("Final")
+resultsPlotter.saveGraphs("Final")'''
 

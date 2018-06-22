@@ -29,7 +29,7 @@ class DataPlotter:
         self.frameNumber = "%08d" % 0
 
         # For Errors:
-        self.fig = plt.figure(figsize=(16, 8))
+        self.fig = plt.figure(figsize=(13, 5))
         self.fig = plt.gcf()
         self.fig.show()
         self.fig.canvas.draw()
@@ -38,10 +38,10 @@ class DataPlotter:
         self.onlineErrHistory = []
         self.ltiErrHistory = []
         self.costHistory = []
-        self.trajectoryGraph = self.fig.add_subplot(2, 2, 1)
-        self.trainErrGraph = self.fig.add_subplot(2, 2, 2)
-        self.onlineErrGraph = self.fig.add_subplot(2, 2, 3)
-        self.costGraph = self.fig.add_subplot(2, 2, 4)
+        #self.trainErrGraph = self.fig.add_subplot(2, 2, 2)
+        #self.costGraph = self.fig.add_subplot(2, 2, 4)
+        self.trajectoryGraph = self.fig.add_subplot(1, 2, 1)
+        self.onlineErrGraph = self.fig.add_subplot(1, 2, 2)
         #self.ltiErrGraph = self.fig.add_subplot(2, 2, 4)
 
     # Updates the planned trajectory graph.
