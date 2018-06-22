@@ -37,7 +37,7 @@ controller = Controller(emulator, simulator)
 
 # Generate random samples for the initial training and insert them to the data set.
 simulator.generateRandomSamples(db.size, db)
-emulator.train()
+#emulator.train()
 #plotter.plot()
 
 
@@ -70,9 +70,8 @@ def runEpisode(reps=1, evaluate=False, ballLocation='Random', prob=1):
             #plotter.updateOnlineHistory(err)
             #plotter.plot()
 
-            #if rep == 1 and evaluate is True: #Simulate only one rep in each scenario
-                #simulator.simulate()
-
+            if rep == 0 and evaluate is True: #Simulate only one rep in each scenario
+                simulator.simulate()
             if evaluate is False:
                 db.append(xk_uk, xk1)
             else:
@@ -115,6 +114,9 @@ for episode in range(episodes):
     # Train the emulator with new data.
     if episode % 5 == 0:
         trainingErr = emulator.train()
+        print halfwayCost
+        print farCost
+        print centerCost
         #plotter.updateTrainingHistory(trainingErr)
         #plotter.plot()
         #resultsPlotter.saveGraphs("progress")

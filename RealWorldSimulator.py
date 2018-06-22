@@ -43,9 +43,15 @@ class RealWorldSimulator:
         self.uk = np.zeros(self.uDim)  # Current action taken
         self.ball = np.zeros(self.uDim)  # ball location
 
-        # Initialize environment
-        self.env = gym.make('ReacherRandomBall-v0')
-        self.observation = np.array(self.env.reset())
+        # Initialize environments
+        self.envRandomBall = gym.make('ReacherRandomBall-v0')
+        self.envHalfwayBall = gym.make('ReacherHalfwayBall-v0')
+        self.envFarBall = gym.make('ReacherFarBall-v0')
+        self.envCenterBall = gym.make('ReacherCenterBall-v0')
+
+        self.env = self.envRandomBall
+
+        self.observation = self.env.reset()
         self.deriveXnFromObservation()
         self.ball[0] = self.observation[8]
         self.ball[1] = self.observation[9]
@@ -75,19 +81,19 @@ class RealWorldSimulator:
         return self.getXk()
 
     # Resets the simulator state (in case of exception)
-    def reset(self, ballLocation):  # TODO: Check return value dimensions
+    def reset(self, ballLocation):
 
         if ballLocation == 'Random':
-            self.env = gym.make('ReacherRandomBall-v0')
+            self.env = self.envRandomBall
 
         elif ballLocation == 'Halfway':
-            self.env = gym.make('ReacherHalfwayBall-v0')
+            self.env = self.envHalfwayBall
 
         elif ballLocation == 'Far':
-            self.env = gym.make('ReacherFarBall-v0')
+            self.env = self.envFarBall
 
         elif ballLocation == 'Center':
-            self.env = gym.make('ReacherCenterBall-v0')
+            self.env = self.envCenterBall
 
         self.observation = self.env.reset()  # reset the system to a new state
         self.deriveXnFromObservation()
