@@ -93,10 +93,12 @@ for episode in range(episodes):
 
     if episode < 10:
         p = 0.3
-    elif (episode > 50 and episode < 100):
+    elif episode > 50:
+        p = 0.5
+    elif episode < 100:
         p = 0.7
     else:
-        p = 0.9
+        p = 0.95
 
     runEpisode(prob=p)
 
